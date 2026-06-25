@@ -7,10 +7,14 @@ using Microsoft.Extensions.Options;
 
 namespace BrushEssence.Api.Controllers;
 
-/// <summary>Image uploads. Admin-only; returns the stored file's public URL.</summary>
+/// <summary>
+/// Image uploads. Authentication is required for all uploads; catalogue images
+/// are admin-only, while any signed-in customer may upload reference images for
+/// their custom requests. Each endpoint returns the stored file's public URL.
+/// </summary>
 [ApiController]
 [Route("api/uploads")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+[Authorize]
 [Produces("application/json")]
 public sealed class UploadsController(
     IFileStorageService fileStorage,
@@ -18,11 +22,25 @@ public sealed class UploadsController(
 {
     private readonly FileStorageOptions _options = options.Value;
 
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpPost("paintings")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UploadPaintingImage(IFormFile file, CancellationToken cancellationToken)
+    public Task<IActionResult> UploadPaintingImage(IFormFile file, CancellationToken cancellationToken)
+        => StoreAsync(file, "paintings", cancellationToken);
+
+    [HttpPost("custom-requests")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public Task<IActionResult> UploadCustomRequestImage(IFormFile file, CancellationToken cancellationToken)
+        => StoreAsync(file, "custom-requests", cancellationToken);
+
+    private async Task<IActionResult> StoreAsync(
+        IFormFile file,
+        string subfolder,
+        CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
         {
@@ -45,7 +63,7 @@ public sealed class UploadsController(
         }
 
         await using var stream = file.OpenReadStream();
-        var url = await fileStorage.SaveAsync(stream, file.FileName, "paintings", cancellationToken);
+        var url = await fileStorage.SaveAsync(stream, file.FileName, subfolder, cancellationToken);
         return Ok(new { url });
     }
 }
