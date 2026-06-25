@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BrushEssence.Application\BrushEssence.Application.csproj" />
     <ProjectReference Include="..\..\src\BrushEssence.Domain\BrushEssence.Domain.csproj" />
+    <ProjectReference Include="..\..\src\BrushEssence.Infrastructure\BrushEssence.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

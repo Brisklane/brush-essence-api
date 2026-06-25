@@ -1,6 +1,9 @@
+using BrushEssence.Api.Extensions;
+using BrushEssence.Api.Identity;
 using BrushEssence.Api.Middleware;
 using BrushEssence.Api.Options;
 using BrushEssence.Application;
+using BrushEssence.Application.Common.Interfaces;
 using BrushEssence.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
@@ -30,10 +33,15 @@ try
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
 
+    // Authentication & authorization (JWT bearer + policies).
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+    builder.Services.AddJwtAuthentication(builder.Configuration);
+
     // Web/API services.
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerWithJwt();
     builder.Services.AddOpenApi();
 
     // RFC 7807 ProblemDetails + centralized exception handling.
@@ -72,6 +80,7 @@ try
 
     app.UseHttpsRedirection();
     app.UseCors();
+    app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();

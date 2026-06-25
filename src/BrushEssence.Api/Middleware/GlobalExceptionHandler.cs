@@ -1,3 +1,4 @@
+using BrushEssence.Application.Common.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ namespace BrushEssence.Api.Middleware;
 /// <summary>
 /// Centralized exception handling. Implements the .NET 9 <see cref="IExceptionHandler"/>
 /// abstraction (registered via <c>AddExceptionHandler</c> + <c>UseExceptionHandler</c>)
-/// and converts unhandled exceptions into RFC 7807 <see cref="ProblemDetails"/>.
+/// and converts exceptions into RFC 7807 <see cref="ProblemDetails"/>.
 /// </summary>
 public class GlobalExceptionHandler : IExceptionHandler
 {
@@ -27,19 +28,35 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogError(
-            exception,
-            "Unhandled exception processing {Method} {Path}",
-            httpContext.Request.Method,
-            httpContext.Request.Path);
-
         var (statusCode, title) = exception switch
         {
             ValidationException => (StatusCodes.Status400BadRequest, "One or more validation errors occurred."),
-            KeyNotFoundException => (StatusCodes.Status404NotFound, "The requested resource was not found."),
+            BadRequestException => (StatusCodes.Status400BadRequest, "The request could not be processed."),
+            AuthenticationException => (StatusCodes.Status401Unauthorized, "Authentication failed."),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Authentication is required."),
+            NotFoundException or KeyNotFoundException => (StatusCodes.Status404NotFound, "The requested resource was not found."),
+            ConflictException => (StatusCodes.Status409Conflict, "The request conflicts with the current state."),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred."),
         };
+
+        // Expected (mappable) errors are routine; only unexpected 500s are logged as errors.
+        if (statusCode == StatusCodes.Status500InternalServerError)
+        {
+            _logger.LogError(
+                exception,
+                "Unhandled exception processing {Method} {Path}",
+                httpContext.Request.Method,
+                httpContext.Request.Path);
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Handled {ExceptionType} on {Method} {Path}: {Message}",
+                exception.GetType().Name,
+                httpContext.Request.Method,
+                httpContext.Request.Path,
+                exception.Message);
+        }
 
         httpContext.Response.StatusCode = statusCode;
 
@@ -50,6 +67,12 @@ public class GlobalExceptionHandler : IExceptionHandler
             Type = $"https://httpstatuses.io/{statusCode}",
             Instance = $"{httpContext.Request.Method} {httpContext.Request.Path}",
         };
+
+        // Surface the message for expected application errors; never leak internals on 500.
+        if (exception is AppException)
+        {
+            problemDetails.Detail = exception.Message;
+        }
 
         if (exception is ValidationException validationException)
         {

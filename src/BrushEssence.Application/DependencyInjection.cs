@@ -1,4 +1,5 @@
 using System.Reflection;
+using BrushEssence.Application.Auth;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,9 @@ public static class DependencyInjection
         // Register every FluentValidation validator in this assembly.
         // (Object mapping is handled by explicit extension methods, no library.)
         services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);
+
+        // Application use-case services.
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }
