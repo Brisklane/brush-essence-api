@@ -48,9 +48,12 @@ public static class DependencyInjection
         services.AddScoped<IPaintingRepository, PaintingRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-        // File storage (local disk; swappable for cloud later).
+        // Image storage in PostgreSQL (bytea). Scoped because it uses the
+        // request-scoped DbContext. Swap for LocalFileStorageService or a cloud
+        // implementation without touching callers. FileStorageOptions still
+        // drives upload validation (size/type limits).
         services.Configure<FileStorageOptions>(configuration.GetSection(FileStorageOptions.SectionName));
-        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<IFileStorageService, DatabaseFileStorageService>();
 
         // Identity services (JWT issuing + BCrypt hashing) and their options.
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));

@@ -18,7 +18,7 @@ public sealed class PaintingService(
 
         return new PagedResult<PaintingDto>
         {
-            Items = items.Select(painting => painting.ToDto()).ToArray(),
+            Items = items,
             TotalCount = totalCount,
             Page = query.Page,
             PageSize = query.PageSize,
@@ -26,12 +26,8 @@ public sealed class PaintingService(
     }
 
     public async Task<PaintingDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        var painting = await paintings.GetByIdAsync(id, cancellationToken)
+        => await paintings.GetDtoByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("Painting not found.");
-
-        return painting.ToDto();
-    }
 
     public async Task<PaintingDto> CreateAsync(
         CreatePaintingRequest request,

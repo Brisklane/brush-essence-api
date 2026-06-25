@@ -1,6 +1,7 @@
 using BrushEssence.Api.Authorization;
 using BrushEssence.Application.Common.Models;
 using BrushEssence.Application.Paintings;
+using BrushEssence.Domain.Common;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,13 +24,32 @@ public sealed class PaintingsController(
     public async Task<ActionResult<PagedResult<PaintingDto>>> GetAll(
         [FromQuery] PaintingQuery query,
         CancellationToken cancellationToken)
-        => Ok(await paintingService.GetPagedAsync(query, cancellationToken));
+    {
+        // Anonymous/customer callers only ever see the published catalogue;
+        // only admins may browse drafts (and filter by IsPublished freely).
+        if (!User.IsInRole(Roles.Admin))
+        {
+            query.IsPublished = true;
+        }
+
+        return Ok(await paintingService.GetPagedAsync(query, cancellationToken));
+    }
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PaintingDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PaintingDto>> GetById(Guid id, CancellationToken cancellationToken)
-        => Ok(await paintingService.GetByIdAsync(id, cancellationToken));
+    {
+        var painting = await paintingService.GetByIdAsync(id, cancellationToken);
+
+        // Hide unpublished paintings from non-admins (don't reveal their existence).
+        if (!painting.IsPublished && !User.IsInRole(Roles.Admin))
+        {
+            return NotFound();
+        }
+
+        return Ok(painting);
+    }
 
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpPost]

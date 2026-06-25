@@ -33,24 +33,30 @@ public sealed class LocalFileStorageService(IOptions<FileStorageOptions> options
         return $"{prefix}/{subfolder}/{fileName}".Replace('\\', '/');
     }
 
+    public async Task<StoredFile?> GetAsync(string publicUrl, CancellationToken cancellationToken = default)
+    {
+        if (!TryResolvePhysicalPath(publicUrl, out var physicalPath) || !File.Exists(physicalPath))
+        {
+            return null;
+        }
+
+        var bytes = await File.ReadAllBytesAsync(physicalPath, cancellationToken);
+        var contentType = Path.GetExtension(physicalPath).ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream",
+        };
+        return new StoredFile(bytes, contentType, Path.GetFileName(physicalPath));
+    }
+
     public Task DeleteAsync(string? publicUrl, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(publicUrl))
+        if (!TryResolvePhysicalPath(publicUrl, out var physicalPath))
         {
             return Task.CompletedTask;
         }
-
-        var prefix = _options.PublicPathPrefix.TrimEnd('/');
-        if (!publicUrl.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-        {
-            // Not a file we own (e.g. an external URL) — ignore.
-            return Task.CompletedTask;
-        }
-
-        var relative = publicUrl[prefix.Length..].TrimStart('/');
-        var physicalPath = Path.Combine(
-            _options.PhysicalRootPath,
-            relative.Replace('/', Path.DirectorySeparatorChar));
 
         try
         {
@@ -65,5 +71,25 @@ public sealed class LocalFileStorageService(IOptions<FileStorageOptions> options
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>Maps a public URL we own back to its on-disk path.</summary>
+    private bool TryResolvePhysicalPath(string? publicUrl, out string physicalPath)
+    {
+        physicalPath = string.Empty;
+
+        var prefix = _options.PublicPathPrefix.TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(publicUrl) ||
+            !publicUrl.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            // Not a file we own (e.g. an external URL) — ignore.
+            return false;
+        }
+
+        var relative = publicUrl[prefix.Length..].TrimStart('/');
+        physicalPath = Path.Combine(
+            _options.PhysicalRootPath,
+            relative.Replace('/', Path.DirectorySeparatorChar));
+        return true;
     }
 }

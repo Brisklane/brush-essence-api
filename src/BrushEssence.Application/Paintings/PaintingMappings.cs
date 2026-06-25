@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 using BrushEssence.Domain.Entities;
 
 namespace BrushEssence.Application.Paintings;
@@ -8,6 +10,29 @@ namespace BrushEssence.Application.Paintings;
 /// </summary>
 public static class PaintingMappings
 {
+    /// <summary>
+    /// EF Core projection used by read queries. Selecting straight into the DTO
+    /// lets the database return only the columns we need (and a single LEFT JOIN
+    /// for the category name) instead of materialising whole entity graphs.
+    /// </summary>
+    public static readonly Expression<Func<Painting, PaintingDto>> ToDtoProjection = painting => new PaintingDto
+    {
+        Id = painting.Id,
+        Title = painting.Title,
+        Description = painting.Description,
+        Price = painting.Price,
+        Currency = painting.Currency,
+        WidthCm = painting.WidthCm,
+        HeightCm = painting.HeightCm,
+        Medium = painting.Medium,
+        ImageUrl = painting.ImageUrl,
+        StockQuantity = painting.StockQuantity,
+        IsPublished = painting.IsPublished,
+        CategoryId = painting.CategoryId,
+        CategoryName = painting.Category != null ? painting.Category.Name : null,
+        CreatedAt = painting.CreatedAt,
+    };
+
     public static PaintingDto ToDto(this Painting painting) => new()
     {
         Id = painting.Id,
