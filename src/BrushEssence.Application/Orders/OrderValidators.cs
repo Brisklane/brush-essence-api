@@ -1,0 +1,35 @@
+using FluentValidation;
+
+namespace BrushEssence.Application.Orders;
+
+public sealed class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
+{
+    public CreateOrderRequestValidator()
+    {
+        RuleFor(x => x.ShippingAddress).NotNull().SetValidator(new ShippingAddressInputValidator());
+    }
+}
+
+public sealed class ShippingAddressInputValidator : AbstractValidator<ShippingAddressInput>
+{
+    public ShippingAddressInputValidator()
+    {
+        RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Line1).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Line2).MaximumLength(200);
+        RuleFor(x => x.City).NotEmpty().MaximumLength(120);
+        RuleFor(x => x.Region).MaximumLength(120);
+        RuleFor(x => x.PostalCode).NotEmpty().MaximumLength(20);
+        RuleFor(x => x.Country).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Phone).MaximumLength(40);
+    }
+}
+
+public sealed class UpdateOrderStatusRequestValidator : AbstractValidator<UpdateOrderStatusRequest>
+{
+    public UpdateOrderStatusRequestValidator()
+    {
+        RuleFor(x => x.Status).IsInEnum();
+        RuleFor(x => x.Note).MaximumLength(500);
+    }
+}
