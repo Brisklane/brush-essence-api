@@ -1,5 +1,7 @@
+using BrushEssence.Application.Admin;
 using BrushEssence.Application.Common.Exceptions;
 using BrushEssence.Application.Common.Interfaces;
+using BrushEssence.Application.Common.Models;
 using BrushEssence.Domain.Common;
 using BrushEssence.Domain.Entities;
 
@@ -91,6 +93,21 @@ public sealed class OrderService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return order.ToDto();
+    }
+
+    public async Task<PagedResult<AdminOrderListItemDto>> GetAllAsync(
+        AdminOrderQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var (items, totalCount) = await orders.GetPagedForAdminAsync(query, cancellationToken);
+
+        return new PagedResult<AdminOrderListItemDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = query.Page,
+            PageSize = query.PageSize,
+        };
     }
 
     public async Task<IReadOnlyList<OrderSummaryDto>> GetMyOrdersAsync(

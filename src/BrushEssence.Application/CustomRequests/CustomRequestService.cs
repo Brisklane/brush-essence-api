@@ -1,5 +1,7 @@
+using BrushEssence.Application.Admin;
 using BrushEssence.Application.Common.Exceptions;
 using BrushEssence.Application.Common.Interfaces;
+using BrushEssence.Application.Common.Models;
 using BrushEssence.Domain.Common;
 using BrushEssence.Domain.Entities;
 
@@ -44,6 +46,21 @@ public sealed class CustomRequestService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return entity.ToDto();
+    }
+
+    public async Task<PagedResult<AdminCustomRequestListItemDto>> GetAllAsync(
+        AdminCustomRequestQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var (items, totalCount) = await requests.GetPagedForAdminAsync(query, cancellationToken);
+
+        return new PagedResult<AdminCustomRequestListItemDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = query.Page,
+            PageSize = query.PageSize,
+        };
     }
 
     public async Task<IReadOnlyList<CustomRequestSummaryDto>> GetMyRequestsAsync(

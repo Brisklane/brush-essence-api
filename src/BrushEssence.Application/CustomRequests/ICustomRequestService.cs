@@ -1,3 +1,6 @@
+using BrushEssence.Application.Admin;
+using BrushEssence.Application.Common.Models;
+
 namespace BrushEssence.Application.CustomRequests;
 
 /// <summary>
@@ -6,6 +9,9 @@ namespace BrushEssence.Application.CustomRequests;
 /// </summary>
 public interface ICustomRequestService
 {
+    /// <summary>Admin: a paged, filterable list of every customer's requests.</summary>
+    Task<PagedResult<AdminCustomRequestListItemDto>> GetAllAsync(AdminCustomRequestQuery query, CancellationToken cancellationToken = default);
+
     /// <summary>Submits a new custom request for the current user.</summary>
     Task<CustomRequestDto> CreateAsync(CreateCustomRequestRequest request, CancellationToken cancellationToken = default);
 

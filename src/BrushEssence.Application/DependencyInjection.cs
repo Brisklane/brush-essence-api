@@ -1,4 +1,5 @@
 using System.Reflection;
+using BrushEssence.Application.Admin;
 using BrushEssence.Application.Auth;
 using BrushEssence.Application.Carts;
 using BrushEssence.Application.Categories;
@@ -31,6 +32,10 @@ public static class DependencyInjection
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICustomRequestService, CustomRequestService>();
+
+        // Admin dashboard services.
+        services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddScoped<IDashboardService, DashboardService>();
 
         return services;
     }

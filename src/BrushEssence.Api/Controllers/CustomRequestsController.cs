@@ -1,4 +1,3 @@
-using BrushEssence.Api.Authorization;
 using BrushEssence.Application.CustomRequests;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
@@ -7,9 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace BrushEssence.Api.Controllers;
 
 /// <summary>
-/// Custom painting requests. Every endpoint requires authentication; a customer
-/// only ever sees and edits their own requests, while status changes are
-/// reserved for admins.
+/// Customer custom painting requests. Every endpoint requires authentication and
+/// only ever exposes the caller's own requests. Admin review/status management
+/// lives under <c>api/admin/custom-requests</c>.
 /// </summary>
 [ApiController]
 [Route("api/custom-requests")]
@@ -18,8 +17,7 @@ namespace BrushEssence.Api.Controllers;
 public sealed class CustomRequestsController(
     ICustomRequestService customRequestService,
     IValidator<CreateCustomRequestRequest> createValidator,
-    IValidator<UpdateCustomRequestRequest> updateValidator,
-    IValidator<UpdateCustomRequestStatusRequest> statusValidator) : ControllerBase
+    IValidator<UpdateCustomRequestRequest> updateValidator) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(CustomRequestDto), StatusCodes.Status201Created)]
@@ -56,20 +54,5 @@ public sealed class CustomRequestsController(
     {
         await updateValidator.ValidateAndThrowAsync(request, cancellationToken);
         return Ok(await customRequestService.UpdateAsync(id, request, cancellationToken));
-    }
-
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
-    [HttpPut("{id:guid}/status")]
-    [ProducesResponseType(typeof(CustomRequestDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CustomRequestDto>> UpdateStatus(
-        Guid id,
-        UpdateCustomRequestStatusRequest request,
-        CancellationToken cancellationToken)
-    {
-        await statusValidator.ValidateAndThrowAsync(request, cancellationToken);
-        return Ok(await customRequestService.UpdateStatusAsync(id, request, cancellationToken));
     }
 }

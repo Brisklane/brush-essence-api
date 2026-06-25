@@ -1,3 +1,4 @@
+using BrushEssence.Application.Admin;
 using BrushEssence.Application.Orders;
 using BrushEssence.Domain.Entities;
 
@@ -6,6 +7,11 @@ namespace BrushEssence.Application.Common.Interfaces;
 public interface IOrderRepository
 {
     Task AddAsync(Order order, CancellationToken cancellationToken = default);
+
+    /// <summary>Paged, filtered admin listing across all users (no tracking).</summary>
+    Task<(IReadOnlyList<AdminOrderListItemDto> Items, int TotalCount)> GetPagedForAdminAsync(
+        AdminOrderQuery query,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Loads a full order (items + status history) for reading or status updates.
