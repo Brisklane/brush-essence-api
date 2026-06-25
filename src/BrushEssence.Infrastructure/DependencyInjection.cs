@@ -1,4 +1,5 @@
 using BrushEssence.Application.Common.Interfaces;
+using BrushEssence.Infrastructure.Identity;
 using BrushEssence.Infrastructure.Persistence;
 using BrushEssence.Infrastructure.Persistence.Interceptors;
 using BrushEssence.Infrastructure.Persistence.Repositories;
@@ -35,6 +36,17 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Auth-specific repositories.
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+
+        // Identity services (JWT issuing + BCrypt hashing) and their options.
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         return services;
     }
