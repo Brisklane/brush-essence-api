@@ -19,6 +19,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<StoredImage> Images => Set<StoredImage>();
 
+    public DbSet<Cart> Carts => Set<Cart>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
+
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();

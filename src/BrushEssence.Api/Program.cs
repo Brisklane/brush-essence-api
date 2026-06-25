@@ -43,6 +43,7 @@ try
     // Authentication & authorization (JWT bearer + policies).
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+    builder.Services.AddScoped<ICartSession, CartSession>();
     builder.Services.AddJwtAuthentication(builder.Configuration);
 
     // Web/API services.
