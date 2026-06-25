@@ -1,3 +1,6 @@
+using BrushEssence.Application.Admin;
+using BrushEssence.Application.Common.Models;
+
 namespace BrushEssence.Application.Orders;
 
 /// <summary>
@@ -6,6 +9,9 @@ namespace BrushEssence.Application.Orders;
 /// </summary>
 public interface IOrderService
 {
+    /// <summary>Admin: a paged, filterable list of every customer's orders.</summary>
+    Task<PagedResult<AdminOrderListItemDto>> GetAllAsync(AdminOrderQuery query, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Places an order from the current user's cart: validates stock, snapshots
     /// prices, decrements inventory, and empties the cart — all atomically.

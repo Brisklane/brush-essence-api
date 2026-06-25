@@ -1,3 +1,4 @@
+using BrushEssence.Application.Admin;
 using BrushEssence.Domain.Entities;
 
 namespace BrushEssence.Application.Common.Interfaces;
@@ -18,4 +19,9 @@ public interface IUserRepository
     Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken = default);
 
     Task AddAsync(User user, CancellationToken cancellationToken = default);
+
+    /// <summary>Paged, filtered admin listing projected to DTOs (no tracking).</summary>
+    Task<(IReadOnlyList<AdminUserDto> Items, int TotalCount)> GetPagedAsync(
+        AdminUserQuery query,
+        CancellationToken cancellationToken = default);
 }

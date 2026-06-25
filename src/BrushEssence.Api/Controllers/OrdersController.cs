@@ -1,4 +1,3 @@
-using BrushEssence.Api.Authorization;
 using BrushEssence.Application.Orders;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
@@ -7,9 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace BrushEssence.Api.Controllers;
 
 /// <summary>
-/// Checkout and order management. Every endpoint requires authentication; a
-/// customer only ever sees their own orders, while status changes are reserved
-/// for admins.
+/// Customer checkout and order history. Every endpoint requires authentication
+/// and only ever exposes the caller's own orders. Admin order management lives
+/// under <c>api/admin/orders</c>.
 /// </summary>
 [ApiController]
 [Route("api/orders")]
@@ -17,8 +16,7 @@ namespace BrushEssence.Api.Controllers;
 [Authorize]
 public sealed class OrdersController(
     IOrderService orderService,
-    IValidator<CreateOrderRequest> createValidator,
-    IValidator<UpdateOrderStatusRequest> statusValidator) : ControllerBase
+    IValidator<CreateOrderRequest> createValidator) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(OrderDto), StatusCodes.Status201Created)]
@@ -49,19 +47,4 @@ public sealed class OrdersController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderTrackingDto>> GetTracking(Guid id, CancellationToken cancellationToken)
         => Ok(await orderService.GetTrackingAsync(id, cancellationToken));
-
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
-    [HttpPut("{id:guid}/status")]
-    [ProducesResponseType(typeof(OrderDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OrderDto>> UpdateStatus(
-        Guid id,
-        UpdateOrderStatusRequest request,
-        CancellationToken cancellationToken)
-    {
-        await statusValidator.ValidateAndThrowAsync(request, cancellationToken);
-        return Ok(await orderService.UpdateStatusAsync(id, request, cancellationToken));
-    }
 }

@@ -53,6 +53,9 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ICustomRequestRepository, CustomRequestRepository>();
 
+        // Cross-aggregate reporting for the admin dashboard.
+        services.AddScoped<IReportingRepository, ReportingRepository>();
+
         // Image storage in PostgreSQL (bytea). Scoped because it uses the
         // request-scoped DbContext. Swap for LocalFileStorageService or a cloud
         // implementation without touching callers. FileStorageOptions still
