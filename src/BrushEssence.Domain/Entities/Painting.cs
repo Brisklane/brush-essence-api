@@ -39,4 +39,10 @@ public class Painting : AuditableEntity
 
     /// <summary>Whether the painting is visible in the public catalogue.</summary>
     public bool IsPublished { get; set; }
+
+    /// <summary>Optional category this painting belongs to.</summary>
+    public Guid? CategoryId { get; set; }
+
+    // Navigation property
+    public Category? Category { get; set; }
 }

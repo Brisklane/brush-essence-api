@@ -3,6 +3,10 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# Uploaded user content (keep the folder, ignore its contents)
+src/BrushEssence.Api/wwwroot/uploads/*
+!src/BrushEssence.Api/wwwroot/uploads/.gitkeep
+
 # dotenv files
 .env
 .env.local

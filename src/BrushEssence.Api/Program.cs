@@ -5,7 +5,9 @@ using BrushEssence.Api.Options;
 using BrushEssence.Application;
 using BrushEssence.Application.Common.Interfaces;
 using BrushEssence.Infrastructure;
+using BrushEssence.Infrastructure.Storage;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileProviders;
 using Serilog;
 
 // Bootstrap logger captures failures that occur before the host is fully built.
@@ -32,6 +34,11 @@ try
     // Application + Infrastructure layers (Clean Architecture composition root).
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
+
+    // Physical directory uploaded images are written to and served from.
+    var uploadsRoot = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
+    Directory.CreateDirectory(uploadsRoot);
+    builder.Services.PostConfigure<FileStorageOptions>(options => options.PhysicalRootPath = uploadsRoot);
 
     // Authentication & authorization (JWT bearer + policies).
     builder.Services.AddHttpContextAccessor();
@@ -70,6 +77,13 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseExceptionHandler();
+
+    // Serve uploaded images at /uploads/* from the physical uploads directory.
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadsRoot),
+        RequestPath = "/uploads",
+    });
 
     if (app.Environment.IsDevelopment())
     {

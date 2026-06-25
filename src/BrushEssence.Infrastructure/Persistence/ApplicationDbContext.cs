@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
     }
 
     public DbSet<Painting> Paintings => Set<Painting>();
+    public DbSet<Category> Categories => Set<Category>();
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
