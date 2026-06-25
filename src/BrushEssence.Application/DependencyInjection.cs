@@ -2,6 +2,8 @@ using System.Reflection;
 using BrushEssence.Application.Auth;
 using BrushEssence.Application.Carts;
 using BrushEssence.Application.Categories;
+using BrushEssence.Application.CustomRequests;
+using BrushEssence.Application.Orders;
 using BrushEssence.Application.Paintings;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +29,8 @@ public static class DependencyInjection
         services.AddScoped<IPaintingService, PaintingService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ICartService, CartService>();
+        services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<ICustomRequestService, CustomRequestService>();
 
         return services;
     }

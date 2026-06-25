@@ -48,8 +48,10 @@ public static class DependencyInjection
         services.AddScoped<IPaintingRepository, PaintingRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-        // Cart repository.
+        // Cart + order + custom-request repositories.
         services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<ICustomRequestRepository, CustomRequestRepository>();
 
         // Image storage in PostgreSQL (bytea). Scoped because it uses the
         // request-scoped DbContext. Swap for LocalFileStorageService or a cloud

@@ -46,8 +46,11 @@ try
     builder.Services.AddScoped<ICartSession, CartSession>();
     builder.Services.AddJwtAuthentication(builder.Configuration);
 
-    // Web/API services.
-    builder.Services.AddControllers();
+    // Web/API services. Serialize enums as their readable names (e.g. order
+    // status "Placed") so the JSON contract is self-describing and stable.
+    builder.Services.AddControllers()
+        .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()));
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerWithJwt();
     builder.Services.AddOpenApi();
