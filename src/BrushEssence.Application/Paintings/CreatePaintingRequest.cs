@@ -20,4 +20,6 @@ public class CreatePaintingRequest
     public string? ImageUrl { get; set; }
 
     public int StockQuantity { get; set; } = 1;
+
+    public Guid? CategoryId { get; set; }
 }

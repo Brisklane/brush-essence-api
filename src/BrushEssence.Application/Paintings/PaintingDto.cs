@@ -25,5 +25,9 @@ public class PaintingDto
 
     public bool IsPublished { get; set; }
 
+    public Guid? CategoryId { get; set; }
+
+    public string? CategoryName { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 }

@@ -3,6 +3,7 @@ using BrushEssence.Infrastructure.Identity;
 using BrushEssence.Infrastructure.Persistence;
 using BrushEssence.Infrastructure.Persistence.Interceptors;
 using BrushEssence.Infrastructure.Persistence.Repositories;
+using BrushEssence.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,6 +43,14 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+
+        // Catalogue repositories.
+        services.AddScoped<IPaintingRepository, PaintingRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+
+        // File storage (local disk; swappable for cloud later).
+        services.Configure<FileStorageOptions>(configuration.GetSection(FileStorageOptions.SectionName));
+        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         // Identity services (JWT issuing + BCrypt hashing) and their options.
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));

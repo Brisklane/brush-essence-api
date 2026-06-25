@@ -1,66 +1,71 @@
-using BrushEssence.Application.Common.Interfaces;
+using BrushEssence.Api.Authorization;
+using BrushEssence.Application.Common.Models;
 using BrushEssence.Application.Paintings;
-using BrushEssence.Domain.Entities;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BrushEssence.Api.Controllers;
 
 /// <summary>
-/// Sample CRUD-style endpoint that exercises the full stack (repository,
-/// unit of work, explicit mapping, FluentValidation) end-to-end.
+/// Painting catalogue. Reads are public; writes require the Admin policy.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/paintings")]
 [Produces("application/json")]
-public class PaintingsController : ControllerBase
+public sealed class PaintingsController(
+    IPaintingService paintingService,
+    IValidator<CreatePaintingRequest> createValidator,
+    IValidator<UpdatePaintingRequest> updateValidator) : ControllerBase
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IValidator<CreatePaintingRequest> _createValidator;
-
-    public PaintingsController(
-        IUnitOfWork unitOfWork,
-        IValidator<CreatePaintingRequest> createValidator)
-    {
-        _unitOfWork = unitOfWork;
-        _createValidator = createValidator;
-    }
-
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<PaintingDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<PaintingDto>>> GetAll(
+    [ProducesResponseType(typeof(PagedResult<PaintingDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<PaintingDto>>> GetAll(
+        [FromQuery] PaintingQuery query,
         CancellationToken cancellationToken)
-    {
-        var paintings = await _unitOfWork.Repository<Painting>().ListAsync(cancellationToken);
-        return Ok(paintings.ToDtoList());
-    }
+        => Ok(await paintingService.GetPagedAsync(query, cancellationToken));
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PaintingDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PaintingDto>> GetById(
-        Guid id,
-        CancellationToken cancellationToken)
-    {
-        var painting = await _unitOfWork.Repository<Painting>().GetByIdAsync(id, cancellationToken);
-        return painting is null ? NotFound() : Ok(painting.ToDto());
-    }
+    public async Task<ActionResult<PaintingDto>> GetById(Guid id, CancellationToken cancellationToken)
+        => Ok(await paintingService.GetByIdAsync(id, cancellationToken));
 
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpPost]
     [ProducesResponseType(typeof(PaintingDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<PaintingDto>> Create(
         CreatePaintingRequest request,
         CancellationToken cancellationToken)
     {
-        // The global exception handler turns this into an RFC 7807 response.
-        await _createValidator.ValidateAndThrowAsync(request, cancellationToken);
+        await createValidator.ValidateAndThrowAsync(request, cancellationToken);
+        var dto = await paintingService.CreateAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+    }
 
-        var painting = request.ToEntity();
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(PaintingDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PaintingDto>> Update(
+        Guid id,
+        UpdatePaintingRequest request,
+        CancellationToken cancellationToken)
+    {
+        await updateValidator.ValidateAndThrowAsync(request, cancellationToken);
+        return Ok(await paintingService.UpdateAsync(id, request, cancellationToken));
+    }
 
-        await _unitOfWork.Repository<Painting>().AddAsync(painting, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return CreatedAtAction(nameof(GetById), new { id = painting.Id }, painting.ToDto());
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await paintingService.DeleteAsync(id, cancellationToken);
+        return NoContent();
     }
 }

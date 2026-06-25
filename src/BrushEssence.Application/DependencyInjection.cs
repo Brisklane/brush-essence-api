@@ -1,5 +1,7 @@
 using System.Reflection;
 using BrushEssence.Application.Auth;
+using BrushEssence.Application.Categories;
+using BrushEssence.Application.Paintings;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,6 +23,8 @@ public static class DependencyInjection
 
         // Application use-case services.
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IPaintingService, PaintingService>();
+        services.AddScoped<ICategoryService, CategoryService>();
 
         return services;
     }

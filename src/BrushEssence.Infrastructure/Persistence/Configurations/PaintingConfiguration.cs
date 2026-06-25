@@ -33,5 +33,14 @@ public class PaintingConfiguration : IEntityTypeConfiguration<Painting>
             .HasMaxLength(2048);
 
         builder.HasIndex(p => p.IsPublished);
+
+        // A painting optionally belongs to one category; deleting a category
+        // leaves its paintings in place but uncategorized (FK set to null).
+        builder.HasOne(p => p.Category)
+            .WithMany(c => c.Paintings)
+            .HasForeignKey(p => p.CategoryId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(p => p.CategoryId);
     }
 }
