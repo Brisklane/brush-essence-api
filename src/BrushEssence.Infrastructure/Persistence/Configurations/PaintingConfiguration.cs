@@ -32,7 +32,12 @@ public class PaintingConfiguration : IEntityTypeConfiguration<Painting>
         builder.Property(p => p.ImageUrl)
             .HasMaxLength(2048);
 
-        builder.HasIndex(p => p.IsPublished);
+        // Supports the storefront's default query: published paintings ordered
+        // newest-first. Also covers filtering by IsPublished alone.
+        builder.HasIndex(p => new { p.IsPublished, p.CreatedAt });
+
+        // Supports price-range filtering and price sorting.
+        builder.HasIndex(p => p.Price);
 
         // A painting optionally belongs to one category; deleting a category
         // leaves its paintings in place but uncategorized (FK set to null).
