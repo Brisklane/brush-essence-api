@@ -6,6 +6,7 @@ using BrushEssence.Application.Categories;
 using BrushEssence.Application.CustomRequests;
 using BrushEssence.Application.Orders;
 using BrushEssence.Application.Paintings;
+using BrushEssence.Application.Reviews;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,6 +33,8 @@ public static class DependencyInjection
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICustomRequestService, CustomRequestService>();
+
+        services.AddScoped<IReviewService, ReviewService>();
 
         // Admin dashboard services.
         services.AddScoped<IAdminUserService, AdminUserService>();

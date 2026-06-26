@@ -30,6 +30,8 @@ public static class PaintingMappings
         IsPublished = painting.IsPublished,
         CategoryId = painting.CategoryId,
         CategoryName = painting.Category != null ? painting.Category.Name : null,
+        AverageRating = painting.AverageRating,
+        RatingCount = painting.RatingCount,
         CreatedAt = painting.CreatedAt,
     };
 
@@ -48,6 +50,8 @@ public static class PaintingMappings
         IsPublished = painting.IsPublished,
         CategoryId = painting.CategoryId,
         CategoryName = painting.Category?.Name,
+        AverageRating = painting.AverageRating,
+        RatingCount = painting.RatingCount,
         CreatedAt = painting.CreatedAt,
     };
 
