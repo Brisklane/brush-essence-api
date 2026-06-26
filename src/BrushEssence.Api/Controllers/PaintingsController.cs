@@ -1,15 +1,18 @@
 using BrushEssence.Api.Authorization;
+using BrushEssence.Api.Extensions;
 using BrushEssence.Application.Common.Models;
 using BrushEssence.Application.Paintings;
 using BrushEssence.Domain.Common;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace BrushEssence.Api.Controllers;
 
 /// <summary>
-/// Painting catalogue. Reads are public; writes require the Admin policy.
+/// Painting catalogue. Reads are public (and output-cached for anonymous
+/// callers); writes require the Admin policy and evict the catalogue cache.
 /// </summary>
 [ApiController]
 [Route("api/paintings")]
@@ -17,9 +20,11 @@ namespace BrushEssence.Api.Controllers;
 public sealed class PaintingsController(
     IPaintingService paintingService,
     IValidator<CreatePaintingRequest> createValidator,
-    IValidator<UpdatePaintingRequest> updateValidator) : ControllerBase
+    IValidator<UpdatePaintingRequest> updateValidator,
+    IOutputCacheStore outputCache) : ControllerBase
 {
     [HttpGet]
+    [OutputCache(PolicyName = CachePolicies.Catalog)]
     [ProducesResponseType(typeof(PagedResult<PaintingDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<PaintingDto>>> GetAll(
         [FromQuery] PaintingQuery query,
@@ -36,6 +41,7 @@ public sealed class PaintingsController(
     }
 
     [HttpGet("{id:guid}")]
+    [OutputCache(PolicyName = CachePolicies.Catalog)]
     [ProducesResponseType(typeof(PaintingDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PaintingDto>> GetById(Guid id, CancellationToken cancellationToken)
@@ -62,6 +68,7 @@ public sealed class PaintingsController(
     {
         await createValidator.ValidateAndThrowAsync(request, cancellationToken);
         var dto = await paintingService.CreateAsync(request, cancellationToken);
+        await outputCache.EvictByTagAsync(CachePolicies.CatalogTag, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
     }
 
@@ -76,7 +83,9 @@ public sealed class PaintingsController(
         CancellationToken cancellationToken)
     {
         await updateValidator.ValidateAndThrowAsync(request, cancellationToken);
-        return Ok(await paintingService.UpdateAsync(id, request, cancellationToken));
+        var dto = await paintingService.UpdateAsync(id, request, cancellationToken);
+        await outputCache.EvictByTagAsync(CachePolicies.CatalogTag, cancellationToken);
+        return Ok(dto);
     }
 
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
@@ -86,6 +95,7 @@ public sealed class PaintingsController(
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await paintingService.DeleteAsync(id, cancellationToken);
+        await outputCache.EvictByTagAsync(CachePolicies.CatalogTag, cancellationToken);
         return NoContent();
     }
 }

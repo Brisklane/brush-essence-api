@@ -12,6 +12,7 @@ public sealed class OrderService(
     ICartRepository carts,
     ICurrentUser currentUser,
     TimeProvider timeProvider,
+    IAuditLogger auditLogger,
     IUnitOfWork unitOfWork) : IOrderService
 {
     public async Task<OrderDto> CreateFromCartAsync(
@@ -140,8 +141,12 @@ public sealed class OrderService(
             RestoreStock(order);
         }
 
+        var previousStatus = order.Status;
         order.TransitionTo(request.Status, request.Note);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        auditLogger.LogAction("OrderStatusChanged", "Order", order.Id,
+            new { order.OrderNumber, From = previousStatus.ToString(), To = request.Status.ToString() });
 
         return order.ToDto();
     }

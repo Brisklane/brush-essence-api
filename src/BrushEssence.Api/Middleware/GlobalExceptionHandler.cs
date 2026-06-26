@@ -68,6 +68,10 @@ public class GlobalExceptionHandler : IExceptionHandler
             Instance = $"{httpContext.Request.Method} {httpContext.Request.Path}",
         };
 
+        // Correlation id so a client-reported error can be traced in the logs.
+        problemDetails.Extensions["traceId"] =
+            System.Diagnostics.Activity.Current?.Id ?? httpContext.TraceIdentifier;
+
         // Surface the message for expected application errors; never leak internals on 500.
         if (exception is AppException)
         {

@@ -11,6 +11,7 @@ public sealed class CustomRequestService(
     ICustomRequestRepository requests,
     ICurrentUser currentUser,
     IFileStorageService fileStorage,
+    IAuditLogger auditLogger,
     IUnitOfWork unitOfWork) : ICustomRequestService
 {
     public async Task<CustomRequestDto> CreateAsync(
@@ -116,8 +117,12 @@ public sealed class CustomRequestService(
                 $"A request cannot move from {entity.Status} to {request.Status}.");
         }
 
+        var previousStatus = entity.Status;
         entity.TransitionTo(request.Status, Clean(request.Note));
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        auditLogger.LogAction("CustomRequestStatusChanged", "CustomRequest", entity.Id,
+            new { From = previousStatus.ToString(), To = request.Status.ToString() });
 
         return entity.ToDto();
     }

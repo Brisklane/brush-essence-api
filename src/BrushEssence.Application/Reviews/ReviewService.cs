@@ -9,6 +9,7 @@ public sealed class ReviewService(
     IReviewRepository reviews,
     IPaintingRepository paintings,
     ICurrentUser currentUser,
+    IAuditLogger auditLogger,
     IUnitOfWork unitOfWork) : IReviewService
 {
     public async Task<ReviewDto> CreateAsync(
@@ -110,6 +111,9 @@ public sealed class ReviewService(
         // Approving/rejecting changes the approved set, so refresh the cache.
         await RecalculateRatingAsync(review.PaintingId, cancellationToken);
 
+        auditLogger.LogAction("ReviewModerated", "Review", review.Id,
+            new { Status = request.Status.ToString() });
+
         return ToAdminDto(review);
     }
 
@@ -147,6 +151,8 @@ public sealed class ReviewService(
         {
             await RecalculateRatingAsync(paintingId, cancellationToken);
         }
+
+        auditLogger.LogAction("ReviewDeleted", "Review", id, new { paintingId });
     }
 
     // ----- Helpers -----

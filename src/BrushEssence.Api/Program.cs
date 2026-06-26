@@ -7,6 +7,7 @@ using BrushEssence.Application.Common.Interfaces;
 using BrushEssence.Infrastructure;
 using BrushEssence.Infrastructure.Storage;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using Serilog;
 
@@ -51,6 +52,11 @@ try
     builder.Services.AddControllers()
         .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(
             new System.Text.Json.Serialization.JsonStringEnumConverter()));
+
+    // Output caching for low-volatility public catalogue reads, and rate
+    // limiting to protect the API from abuse.
+    builder.Services.AddCatalogOutputCache();
+    builder.Services.AddApiRateLimiting();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerWithJwt();
     builder.Services.AddOpenApi();
@@ -61,6 +67,9 @@ try
 
     // Health checks: API liveness + PostgreSQL readiness.
     builder.Services.AddHealthChecks()
+        // Liveness: the process is up and serving.
+        .AddCheck("self", () => HealthCheckResult.Healthy("API is running."), tags: ["live"])
+        // Readiness: critical dependencies (the database) are reachable.
         .AddNpgSql(
             builder.Configuration.GetConnectionString("DefaultConnection")!,
             name: "postgresql",
@@ -80,7 +89,14 @@ try
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
+    app.UseSecurityHeaders();
     app.UseExceptionHandler();
+
+    // HSTS in production only (dev runs over http and would poison the browser).
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHsts();
+    }
 
     // Serve uploaded images at /uploads/* from the physical uploads directory.
     app.UseStaticFiles(new StaticFileOptions
@@ -97,21 +113,28 @@ try
     }
 
     app.UseHttpsRedirection();
+    app.UseRateLimiter();
     app.UseCors();
+    app.UseOutputCache();
     app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();
 
-    // Health endpoints.
-    app.MapHealthChecks("/health");
+    // Health endpoints (structured JSON responses).
+    app.MapHealthChecks("/health", new HealthCheckOptions
+    {
+        ResponseWriter = ProductionExtensions.WriteHealthResponse,
+    });
     app.MapHealthChecks("/health/ready", new HealthCheckOptions
     {
         Predicate = check => check.Tags.Contains("ready"),
+        ResponseWriter = ProductionExtensions.WriteHealthResponse,
     });
     app.MapHealthChecks("/health/live", new HealthCheckOptions
     {
-        Predicate = _ => false,
+        Predicate = check => check.Tags.Contains("live"),
+        ResponseWriter = ProductionExtensions.WriteHealthResponse,
     });
 
     app.Run();
