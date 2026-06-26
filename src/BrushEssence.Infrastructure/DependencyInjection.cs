@@ -1,5 +1,6 @@
 using BrushEssence.Application.Common.Interfaces;
 using BrushEssence.Infrastructure.Identity;
+using BrushEssence.Infrastructure.Logging;
 using BrushEssence.Infrastructure.Persistence;
 using BrushEssence.Infrastructure.Persistence.Interceptors;
 using BrushEssence.Infrastructure.Persistence.Repositories;
@@ -23,6 +24,7 @@ public static class DependencyInjection
 
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<AuditableEntityInterceptor>();
+        services.AddScoped<IAuditLogger, AuditLogger>();
 
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
         {

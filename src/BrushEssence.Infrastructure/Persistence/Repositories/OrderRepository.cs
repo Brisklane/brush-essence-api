@@ -57,6 +57,8 @@ public sealed class OrderRepository(ApplicationDbContext context) : IOrderReposi
             .Include(o => o.Items)
                 .ThenInclude(i => i.Painting)
             .Include(o => o.StatusHistory)
+            // Two collection includes — split the query to avoid a cartesian blow-up.
+            .AsSplitQuery()
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<OrderSummaryDto>> GetSummariesByUserAsync(

@@ -54,6 +54,8 @@ public sealed class CustomRequestRepository(ApplicationDbContext context) : ICus
         => context.CustomRequests
             .Include(r => r.Images)
             .Include(r => r.StatusHistory)
+            // Two collection includes — split the query to avoid a cartesian blow-up.
+            .AsSplitQuery()
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<CustomRequestSummaryDto>> GetSummariesByUserAsync(

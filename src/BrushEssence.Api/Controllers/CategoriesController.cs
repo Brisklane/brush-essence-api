@@ -1,13 +1,16 @@
 using BrushEssence.Api.Authorization;
+using BrushEssence.Api.Extensions;
 using BrushEssence.Application.Categories;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace BrushEssence.Api.Controllers;
 
 /// <summary>
-/// Painting categories. Reads are public; writes require the Admin policy.
+/// Painting categories. Reads are public (output-cached); writes require the
+/// Admin policy and evict the catalogue cache.
 /// </summary>
 [ApiController]
 [Route("api/categories")]
@@ -15,14 +18,17 @@ namespace BrushEssence.Api.Controllers;
 public sealed class CategoriesController(
     ICategoryService categoryService,
     IValidator<CreateCategoryRequest> createValidator,
-    IValidator<UpdateCategoryRequest> updateValidator) : ControllerBase
+    IValidator<UpdateCategoryRequest> updateValidator,
+    IOutputCacheStore outputCache) : ControllerBase
 {
     [HttpGet]
+    [OutputCache(PolicyName = CachePolicies.Catalog)]
     [ProducesResponseType(typeof(IReadOnlyList<CategoryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<CategoryDto>>> GetAll(CancellationToken cancellationToken)
         => Ok(await categoryService.GetAllAsync(cancellationToken));
 
     [HttpGet("{id:guid}")]
+    [OutputCache(PolicyName = CachePolicies.Catalog)]
     [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CategoryDto>> GetById(Guid id, CancellationToken cancellationToken)
@@ -39,6 +45,7 @@ public sealed class CategoriesController(
     {
         await createValidator.ValidateAndThrowAsync(request, cancellationToken);
         var dto = await categoryService.CreateAsync(request, cancellationToken);
+        await outputCache.EvictByTagAsync(CachePolicies.CatalogTag, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
     }
 
@@ -53,7 +60,9 @@ public sealed class CategoriesController(
         CancellationToken cancellationToken)
     {
         await updateValidator.ValidateAndThrowAsync(request, cancellationToken);
-        return Ok(await categoryService.UpdateAsync(id, request, cancellationToken));
+        var dto = await categoryService.UpdateAsync(id, request, cancellationToken);
+        await outputCache.EvictByTagAsync(CachePolicies.CatalogTag, cancellationToken);
+        return Ok(dto);
     }
 
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
@@ -63,6 +72,7 @@ public sealed class CategoriesController(
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await categoryService.DeleteAsync(id, cancellationToken);
+        await outputCache.EvictByTagAsync(CachePolicies.CatalogTag, cancellationToken);
         return NoContent();
     }
 }

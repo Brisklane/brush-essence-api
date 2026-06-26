@@ -10,6 +10,7 @@ public sealed class AdminUserService(
     IUserRepository users,
     IRoleRepository roles,
     ICurrentUser currentUser,
+    IAuditLogger auditLogger,
     IUnitOfWork unitOfWork) : IAdminUserService
 {
     public async Task<PagedResult<AdminUserDto>> GetPagedAsync(
@@ -61,6 +62,9 @@ public sealed class AdminUserService(
         await ApplyRolesAsync(user, request.Roles, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        auditLogger.LogAction("UserUpdated", "User", user.Id,
+            new { request.IsActive, Roles = request.Roles });
 
         return ToDto(user);
     }

@@ -1,20 +1,24 @@
+using BrushEssence.Api.Extensions;
 using BrushEssence.Application.Auth;
 using BrushEssence.Application.Common.Exceptions;
 using BrushEssence.Application.Common.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace BrushEssence.Api.Controllers;
 
 /// <summary>
 /// Authentication endpoints. The raw refresh token is returned in the response
 /// body so the Next.js BFF can store it in an httpOnly cookie; it is never
-/// persisted server-side in plaintext.
+/// persisted server-side in plaintext. Rate-limited more tightly than the rest
+/// of the API to blunt brute-force and credential-stuffing attempts.
 /// </summary>
 [ApiController]
 [Route("api/auth")]
 [Produces("application/json")]
+[EnableRateLimiting(RateLimitPolicies.Auth)]
 public sealed class AuthController(
     IAuthService authService,
     ICurrentUser currentUser,
