@@ -29,5 +29,11 @@ public class PaintingDto
 
     public string? CategoryName { get; set; }
 
+    /// <summary>Cached average of approved review ratings (0 when none).</summary>
+    public decimal AverageRating { get; set; }
+
+    /// <summary>Cached count of approved reviews.</summary>
+    public int RatingCount { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 }

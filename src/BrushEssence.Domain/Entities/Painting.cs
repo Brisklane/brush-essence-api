@@ -43,6 +43,15 @@ public class Painting : AuditableEntity
     /// <summary>Optional category this painting belongs to.</summary>
     public Guid? CategoryId { get; set; }
 
+    /// <summary>
+    /// Cached average of approved review ratings (0 when there are none).
+    /// Recomputed by the review service whenever approved reviews change.
+    /// </summary>
+    public decimal AverageRating { get; set; }
+
+    /// <summary>Cached count of approved reviews.</summary>
+    public int RatingCount { get; set; }
+
     // Navigation property
     public Category? Category { get; set; }
 }

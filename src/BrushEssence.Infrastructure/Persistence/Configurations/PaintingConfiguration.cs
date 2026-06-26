@@ -32,6 +32,10 @@ public class PaintingConfiguration : IEntityTypeConfiguration<Painting>
         builder.Property(p => p.ImageUrl)
             .HasMaxLength(2048);
 
+        // Cached rating aggregates, refreshed by the review service.
+        builder.Property(p => p.AverageRating)
+            .HasColumnType("numeric(3,2)");
+
         // Supports the storefront's default query: published paintings ordered
         // newest-first. Also covers filtering by IsPublished alone.
         builder.HasIndex(p => new { p.IsPublished, p.CreatedAt });

@@ -30,6 +30,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<CustomRequestImage> CustomRequestImages => Set<CustomRequestImage>();
     public DbSet<CustomRequestStatusEvent> CustomRequestStatusEvents => Set<CustomRequestStatusEvent>();
 
+    public DbSet<Review> Reviews => Set<Review>();
+
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
