@@ -7,9 +7,12 @@ public class CustomRequestStatusWorkflowTests
 {
     [Theory]
     [InlineData(CustomRequestStatus.Submitted, CustomRequestStatus.Reviewed)]
+    [InlineData(CustomRequestStatus.Submitted, CustomRequestStatus.Quoted)]
     [InlineData(CustomRequestStatus.Submitted, CustomRequestStatus.Declined)]
-    [InlineData(CustomRequestStatus.Reviewed, CustomRequestStatus.InProgress)]
+    [InlineData(CustomRequestStatus.Reviewed, CustomRequestStatus.Quoted)]
     [InlineData(CustomRequestStatus.Reviewed, CustomRequestStatus.Declined)]
+    [InlineData(CustomRequestStatus.Quoted, CustomRequestStatus.InProgress)]
+    [InlineData(CustomRequestStatus.Quoted, CustomRequestStatus.Declined)]
     [InlineData(CustomRequestStatus.InProgress, CustomRequestStatus.Completed)]
     [InlineData(CustomRequestStatus.InProgress, CustomRequestStatus.Declined)]
     public void Allows_valid_transitions(CustomRequestStatus from, CustomRequestStatus to)

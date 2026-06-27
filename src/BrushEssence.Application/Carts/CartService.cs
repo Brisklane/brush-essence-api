@@ -13,17 +13,26 @@ namespace BrushEssence.Application.Carts;
 public sealed class CartService(
     ICartRepository carts,
     IPaintingRepository paintings,
+    IPromotionRepository promotions,
     ICurrentUser currentUser,
     ICartSession cartSession,
+    TimeProvider timeProvider,
     IUnitOfWork unitOfWork) : ICartService
 {
+    /// <summary>Maps a cart to its DTO with current promotional pricing applied.</summary>
+    private async Task<CartDto> ToDtoAsync(Cart cart, CancellationToken cancellationToken)
+    {
+        var live = await promotions.GetLiveAsync(timeProvider.GetUtcNow(), cancellationToken);
+        return cart.ToDto(live);
+    }
+
     public async Task<CartDto> GetCartAsync(CancellationToken cancellationToken = default)
     {
         var cart = await ResolveCartAsync(createIfMissing: false, cancellationToken);
         if (cart is null)
         {
             // No identity and no stored cart yet: hand back an empty, unsaved cart.
-            return new Cart().ToDto();
+            return await ToDtoAsync(new Cart(), cancellationToken);
         }
 
         if (PruneUnavailableItems(cart))
@@ -31,7 +40,7 @@ public sealed class CartService(
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        return cart.ToDto();
+        return await ToDtoAsync(cart, cancellationToken);
     }
 
     public async Task<CartDto> AddItemAsync(
@@ -60,7 +69,7 @@ public sealed class CartService(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return cart.ToDto();
+        return await ToDtoAsync(cart, cancellationToken);
     }
 
     public async Task<CartDto> UpdateItemAsync(
@@ -79,7 +88,7 @@ public sealed class CartService(
 
         item.Quantity = request.Quantity;
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return cart.ToDto();
+        return await ToDtoAsync(cart, cancellationToken);
     }
 
     public async Task<CartDto> RemoveItemAsync(
@@ -94,7 +103,7 @@ public sealed class CartService(
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        return cart?.ToDto() ?? new Cart().ToDto();
+        return await ToDtoAsync(cart ?? new Cart(), cancellationToken);
     }
 
     public async Task<CartDto> ClearAsync(CancellationToken cancellationToken = default)
@@ -106,7 +115,7 @@ public sealed class CartService(
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        return cart?.ToDto() ?? new Cart().ToDto();
+        return await ToDtoAsync(cart ?? new Cart(), cancellationToken);
     }
 
     // ----- Ownership resolution -----

@@ -15,9 +15,9 @@ public class CustomRequestDto
 
     public string? PreferredSize { get; set; }
 
-    public decimal? BudgetAmount { get; set; }
+    public decimal? QuoteAmount { get; set; }
 
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "PKR";
 
     public CustomRequestStatus Status { get; set; }
 

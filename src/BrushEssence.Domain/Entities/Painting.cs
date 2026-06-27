@@ -16,8 +16,8 @@ public class Painting : AuditableEntity
     /// <summary>Selling price in the smallest sensible decimal precision.</summary>
     public decimal Price { get; set; }
 
-    /// <summary>ISO 4217 currency code (e.g. "USD", "PKR").</summary>
-    public string Currency { get; set; } = "USD";
+    /// <summary>ISO 4217 currency code. Fixed to the store currency (PKR).</summary>
+    public string Currency { get; set; } = StoreDefaults.Currency;
 
     /// <summary>Canvas width in centimetres.</summary>
     public double WidthCm { get; set; }
@@ -25,8 +25,8 @@ public class Painting : AuditableEntity
     /// <summary>Canvas height in centimetres.</summary>
     public double HeightCm { get; set; }
 
-    /// <summary>Medium / technique, e.g. "Oil on canvas".</summary>
-    public string? Medium { get; set; }
+    /// <summary>Optional medium / technique this painting was made with.</summary>
+    public Guid? MediumId { get; set; }
 
     /// <summary>Primary image URL for the listing.</summary>
     public string? ImageUrl { get; set; }
@@ -42,6 +42,9 @@ public class Painting : AuditableEntity
 
     /// <summary>Optional category this painting belongs to.</summary>
     public Guid? CategoryId { get; set; }
+
+    // Navigation property
+    public Medium? Medium { get; set; }
 
     /// <summary>
     /// Cached average of approved review ratings (0 when there are none).

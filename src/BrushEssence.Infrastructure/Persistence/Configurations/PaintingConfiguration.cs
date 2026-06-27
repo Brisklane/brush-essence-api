@@ -26,9 +26,6 @@ public class PaintingConfiguration : IEntityTypeConfiguration<Painting>
             .IsRequired()
             .HasMaxLength(3);
 
-        builder.Property(p => p.Medium)
-            .HasMaxLength(100);
-
         builder.Property(p => p.ImageUrl)
             .HasMaxLength(2048);
 
@@ -51,5 +48,14 @@ public class PaintingConfiguration : IEntityTypeConfiguration<Painting>
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(p => p.CategoryId);
+
+        // A painting optionally has one medium; deleting a medium leaves its
+        // paintings in place but without a medium (FK set to null).
+        builder.HasOne(p => p.Medium)
+            .WithMany(m => m.Paintings)
+            .HasForeignKey(p => p.MediumId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(p => p.MediumId);
     }
 }

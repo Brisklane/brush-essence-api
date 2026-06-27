@@ -23,7 +23,7 @@ public sealed class ReportingRepository(ApplicationDbContext context) : IReporti
         var currency = await context.Orders
             .OrderByDescending(o => o.CreatedAt)
             .Select(o => o.Currency)
-            .FirstOrDefaultAsync(cancellationToken) ?? "USD";
+            .FirstOrDefaultAsync(cancellationToken) ?? "PKR";
 
         return new OrderAggregates(total, revenue, currency, byStatus);
     }

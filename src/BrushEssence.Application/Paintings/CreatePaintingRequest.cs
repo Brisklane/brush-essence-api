@@ -9,17 +9,17 @@ public class CreatePaintingRequest
 
     public decimal Price { get; set; }
 
-    public string Currency { get; set; } = "USD";
-
     public double WidthCm { get; set; }
 
     public double HeightCm { get; set; }
 
-    public string? Medium { get; set; }
+    public Guid? MediumId { get; set; }
 
     public string? ImageUrl { get; set; }
 
     public int StockQuantity { get; set; } = 1;
+
+    public bool IsPublished { get; set; }
 
     public Guid? CategoryId { get; set; }
 }

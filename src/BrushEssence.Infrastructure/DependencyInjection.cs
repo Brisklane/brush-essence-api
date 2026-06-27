@@ -49,6 +49,8 @@ public static class DependencyInjection
         // Catalogue repositories.
         services.AddScoped<IPaintingRepository, PaintingRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IMediumRepository, MediumRepository>();
+        services.AddScoped<IPromotionRepository, PromotionRepository>();
 
         // Cart + order + custom-request repositories.
         services.AddScoped<ICartRepository, CartRepository>();

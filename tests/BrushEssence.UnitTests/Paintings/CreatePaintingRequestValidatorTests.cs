@@ -15,7 +15,6 @@ public class CreatePaintingRequestValidatorTests
         {
             Title = "Sunset over the harbour",
             Price = 250m,
-            Currency = "USD",
             WidthCm = 40,
             HeightCm = 60,
             StockQuantity = 1,
@@ -33,7 +32,6 @@ public class CreatePaintingRequestValidatorTests
         {
             Title = string.Empty,
             Price = 250m,
-            Currency = "USD",
             WidthCm = 40,
             HeightCm = 60,
         };
@@ -50,7 +48,6 @@ public class CreatePaintingRequestValidatorTests
         {
             Title = "Untitled",
             Price = 0m,
-            Currency = "USD",
             WidthCm = 40,
             HeightCm = 60,
         };

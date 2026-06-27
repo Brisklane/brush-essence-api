@@ -15,7 +15,7 @@ public class OrderDto
 
     public ShippingAddressDto ShippingAddress { get; set; } = new();
 
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "PKR";
 
     public decimal Subtotal { get; set; }
 
@@ -37,7 +37,7 @@ public class OrderSummaryDto
 
     public OrderStatus Status { get; set; }
 
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "PKR";
 
     public decimal Total { get; set; }
 

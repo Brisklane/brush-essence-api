@@ -32,4 +32,13 @@ public interface ICustomRequestService
     /// status transitions and records a timeline entry.
     /// </summary>
     Task<CustomRequestDto> UpdateStatusAsync(Guid id, UpdateCustomRequestStatusRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Admin: sends the customer a price quote and moves the request to Quoted.</summary>
+    Task<CustomRequestDto> SetQuoteAsync(Guid id, SetCustomRequestQuoteRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Customer: approves the pending quote (moves to In progress).</summary>
+    Task<CustomRequestDto> ApproveQuoteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>Customer: declines the pending quote (moves to Declined).</summary>
+    Task<CustomRequestDto> DeclineQuoteAsync(Guid id, CancellationToken cancellationToken = default);
 }

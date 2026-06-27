@@ -106,7 +106,7 @@ public sealed class DashboardService(
         return new ReportDto
         {
             Days = days,
-            Currency = orderRows.Count > 0 ? orderRows[0].Currency : "USD",
+            Currency = orderRows.Count > 0 ? orderRows[0].Currency : "PKR",
             TotalRevenue = points.Sum(p => p.Revenue),
             TotalOrders = points.Sum(p => p.Orders),
             TotalNewUsers = points.Sum(p => p.NewUsers),

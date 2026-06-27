@@ -15,8 +15,6 @@ public class CreateCustomRequestRequest
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string? PreferredSize { get; set; }
-    public decimal? BudgetAmount { get; set; }
-    public string Currency { get; set; } = "USD";
     public List<CustomRequestImageInput> Images { get; set; } = [];
 }
 
@@ -29,8 +27,6 @@ public class UpdateCustomRequestRequest
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string? PreferredSize { get; set; }
-    public decimal? BudgetAmount { get; set; }
-    public string Currency { get; set; } = "USD";
     public List<CustomRequestImageInput> Images { get; set; } = [];
 }
 
@@ -39,6 +35,15 @@ public class UpdateCustomRequestStatusRequest
 {
     public CustomRequestStatus Status { get; set; }
 
-    /// <summary>Optional message recorded on the timeline (e.g. a quote).</summary>
+    /// <summary>Optional message recorded on the timeline.</summary>
+    public string? Note { get; set; }
+}
+
+/// <summary>Admin action: send the customer a price quote (moves to Quoted).</summary>
+public class SetCustomRequestQuoteRequest
+{
+    public decimal Amount { get; set; }
+
+    /// <summary>Optional message to the customer (e.g. timeline, what's included).</summary>
     public string? Note { get; set; }
 }

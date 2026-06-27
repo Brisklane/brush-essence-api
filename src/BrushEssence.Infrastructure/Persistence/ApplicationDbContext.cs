@@ -17,6 +17,9 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Painting> Paintings => Set<Painting>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Medium> Mediums => Set<Medium>();
+    public DbSet<Promotion> Promotions => Set<Promotion>();
+    public DbSet<PromotionPainting> PromotionPaintings => Set<PromotionPainting>();
     public DbSet<StoredImage> Images => Set<StoredImage>();
 
     public DbSet<Cart> Carts => Set<Cart>();

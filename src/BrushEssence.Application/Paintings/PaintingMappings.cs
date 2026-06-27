@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 
+using BrushEssence.Domain.Common;
 using BrushEssence.Domain.Entities;
 
 namespace BrushEssence.Application.Paintings;
@@ -24,7 +25,8 @@ public static class PaintingMappings
         Currency = painting.Currency,
         WidthCm = painting.WidthCm,
         HeightCm = painting.HeightCm,
-        Medium = painting.Medium,
+        MediumId = painting.MediumId,
+        MediumName = painting.Medium != null ? painting.Medium.Name : null,
         ImageUrl = painting.ImageUrl,
         StockQuantity = painting.StockQuantity,
         IsPublished = painting.IsPublished,
@@ -44,7 +46,8 @@ public static class PaintingMappings
         Currency = painting.Currency,
         WidthCm = painting.WidthCm,
         HeightCm = painting.HeightCm,
-        Medium = painting.Medium,
+        MediumId = painting.MediumId,
+        MediumName = painting.Medium?.Name,
         ImageUrl = painting.ImageUrl,
         StockQuantity = painting.StockQuantity,
         IsPublished = painting.IsPublished,
@@ -63,12 +66,13 @@ public static class PaintingMappings
         Title = request.Title.Trim(),
         Description = request.Description,
         Price = request.Price,
-        Currency = request.Currency,
+        Currency = StoreDefaults.Currency,
         WidthCm = request.WidthCm,
         HeightCm = request.HeightCm,
-        Medium = request.Medium,
+        MediumId = request.MediumId,
         ImageUrl = request.ImageUrl,
         StockQuantity = request.StockQuantity,
+        IsPublished = request.IsPublished,
         CategoryId = request.CategoryId,
     };
 
@@ -78,10 +82,10 @@ public static class PaintingMappings
         painting.Title = request.Title.Trim();
         painting.Description = request.Description;
         painting.Price = request.Price;
-        painting.Currency = request.Currency;
+        painting.Currency = StoreDefaults.Currency;
         painting.WidthCm = request.WidthCm;
         painting.HeightCm = request.HeightCm;
-        painting.Medium = request.Medium;
+        painting.MediumId = request.MediumId;
         painting.ImageUrl = request.ImageUrl;
         painting.StockQuantity = request.StockQuantity;
         painting.IsPublished = request.IsPublished;

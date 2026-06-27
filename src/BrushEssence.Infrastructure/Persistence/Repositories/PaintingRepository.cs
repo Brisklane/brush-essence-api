@@ -72,10 +72,9 @@ public sealed class PaintingRepository(ApplicationDbContext context) : IPainting
             queryable = queryable.Where(p => p.Price <= maxPrice);
         }
 
-        if (!string.IsNullOrWhiteSpace(query.Medium))
+        if (query.MediumId is { } mediumId)
         {
-            var medium = $"%{query.Medium.Trim()}%";
-            queryable = queryable.Where(p => p.Medium != null && EF.Functions.ILike(p.Medium, medium));
+            queryable = queryable.Where(p => p.MediumId == mediumId);
         }
 
         if (query.IsPublished is { } isPublished)

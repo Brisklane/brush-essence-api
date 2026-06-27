@@ -10,7 +10,7 @@ public class AdminOrderListItemDto
     public string OrderNumber { get; set; } = string.Empty;
     public string CustomerEmail { get; set; } = string.Empty;
     public OrderStatus Status { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "PKR";
     public decimal Total { get; set; }
     public int ItemCount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

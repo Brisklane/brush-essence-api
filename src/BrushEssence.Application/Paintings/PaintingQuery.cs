@@ -38,8 +38,8 @@ public sealed class PaintingQuery
     /// <summary>Inclusive maximum price.</summary>
     public decimal? MaxPrice { get; set; }
 
-    /// <summary>Filter by medium/technique (case-insensitive contains).</summary>
-    public string? Medium { get; set; }
+    /// <summary>Filter by a specific medium.</summary>
+    public Guid? MediumId { get; set; }
 
     /// <summary>
     /// Restrict to published / unpublished paintings. The public storefront

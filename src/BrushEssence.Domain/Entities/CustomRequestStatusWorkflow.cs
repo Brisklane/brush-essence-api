@@ -3,16 +3,18 @@ namespace BrushEssence.Domain.Entities;
 /// <summary>
 /// Single source of truth for allowed custom-request status transitions.
 ///
-/// Happy path: Submitted → Reviewed → InProgress → Completed.
-/// A request may be Declined from any non-terminal state.
+/// Happy path: Submitted → Reviewed → Quoted → (customer approves) → InProgress
+/// → Completed. A request may be Declined from any non-terminal state (the
+/// customer rejecting a quote also lands on Declined).
 /// </summary>
 public static class CustomRequestStatusWorkflow
 {
     private static readonly IReadOnlyDictionary<CustomRequestStatus, CustomRequestStatus[]> Transitions =
         new Dictionary<CustomRequestStatus, CustomRequestStatus[]>
         {
-            [CustomRequestStatus.Submitted] = [CustomRequestStatus.Reviewed, CustomRequestStatus.Declined],
-            [CustomRequestStatus.Reviewed] = [CustomRequestStatus.InProgress, CustomRequestStatus.Declined],
+            [CustomRequestStatus.Submitted] = [CustomRequestStatus.Reviewed, CustomRequestStatus.Quoted, CustomRequestStatus.Declined],
+            [CustomRequestStatus.Reviewed] = [CustomRequestStatus.Quoted, CustomRequestStatus.Declined],
+            [CustomRequestStatus.Quoted] = [CustomRequestStatus.InProgress, CustomRequestStatus.Declined],
             [CustomRequestStatus.InProgress] = [CustomRequestStatus.Completed, CustomRequestStatus.Declined],
             [CustomRequestStatus.Completed] = [],
             [CustomRequestStatus.Declined] = [],

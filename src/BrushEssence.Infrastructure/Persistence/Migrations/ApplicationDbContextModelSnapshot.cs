@@ -127,9 +127,6 @@ namespace BrushEssence.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<decimal?>("BudgetAmount")
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -151,6 +148,9 @@ namespace BrushEssence.Infrastructure.Persistence.Migrations
                     b.Property<string>("PreferredSize")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<decimal?>("QuoteAmount")
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -235,6 +235,31 @@ namespace BrushEssence.Infrastructure.Persistence.Migrations
                     b.HasIndex("CustomRequestId");
 
                     b.ToTable("custom_request_status_events", (string)null);
+                });
+
+            modelBuilder.Entity("BrushEssence.Domain.Entities.Medium", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("mediums", (string)null);
                 });
 
             modelBuilder.Entity("BrushEssence.Domain.Entities.Order", b =>
@@ -401,9 +426,8 @@ namespace BrushEssence.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsPublished")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Medium")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<Guid?>("MediumId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric(18,2)");
@@ -428,6 +452,8 @@ namespace BrushEssence.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("MediumId");
 
                     b.HasIndex("Price");
 
@@ -467,6 +493,72 @@ namespace BrushEssence.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("password_reset_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("BrushEssence.Domain.Entities.Promotion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("EndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("promotions", (string)null);
+                });
+
+            modelBuilder.Entity("BrushEssence.Domain.Entities.PromotionPainting", b =>
+                {
+                    b.Property<Guid>("PromotionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PaintingId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("PromotionId", "PaintingId");
+
+                    b.HasIndex("PaintingId");
+
+                    b.ToTable("promotion_paintings", (string)null);
                 });
 
             modelBuilder.Entity("BrushEssence.Domain.Entities.RefreshToken", b =>
@@ -862,7 +954,14 @@ namespace BrushEssence.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("BrushEssence.Domain.Entities.Medium", "Medium")
+                        .WithMany("Paintings")
+                        .HasForeignKey("MediumId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Category");
+
+                    b.Navigation("Medium");
                 });
 
             modelBuilder.Entity("BrushEssence.Domain.Entities.PasswordResetToken", b =>
@@ -874,6 +973,35 @@ namespace BrushEssence.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BrushEssence.Domain.Entities.Promotion", b =>
+                {
+                    b.HasOne("BrushEssence.Domain.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("BrushEssence.Domain.Entities.PromotionPainting", b =>
+                {
+                    b.HasOne("BrushEssence.Domain.Entities.Painting", "Painting")
+                        .WithMany()
+                        .HasForeignKey("PaintingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BrushEssence.Domain.Entities.Promotion", "Promotion")
+                        .WithMany("PromotionPaintings")
+                        .HasForeignKey("PromotionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Painting");
+
+                    b.Navigation("Promotion");
                 });
 
             modelBuilder.Entity("BrushEssence.Domain.Entities.RefreshToken", b =>
@@ -942,11 +1070,21 @@ namespace BrushEssence.Infrastructure.Persistence.Migrations
                     b.Navigation("StatusHistory");
                 });
 
+            modelBuilder.Entity("BrushEssence.Domain.Entities.Medium", b =>
+                {
+                    b.Navigation("Paintings");
+                });
+
             modelBuilder.Entity("BrushEssence.Domain.Entities.Order", b =>
                 {
                     b.Navigation("Items");
 
                     b.Navigation("StatusHistory");
+                });
+
+            modelBuilder.Entity("BrushEssence.Domain.Entities.Promotion", b =>
+                {
+                    b.Navigation("PromotionPaintings");
                 });
 
             modelBuilder.Entity("BrushEssence.Domain.Entities.Role", b =>

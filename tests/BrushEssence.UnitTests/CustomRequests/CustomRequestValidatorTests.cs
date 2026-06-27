@@ -12,7 +12,6 @@ public class CreateCustomRequestRequestValidatorTests
     {
         Title = "Sunset commission",
         Description = "A warm sunset over the sea, ~60x90cm.",
-        Currency = "USD",
     };
 
     [Fact]
@@ -22,7 +21,7 @@ public class CreateCustomRequestRequestValidatorTests
     [Fact]
     public void Missing_title_and_description_fail_validation()
     {
-        var request = new CreateCustomRequestRequest { Title = "", Description = "", Currency = "USD" };
+        var request = new CreateCustomRequestRequest { Title = "", Description = "" };
 
         var result = _validator.TestValidate(request);
 
@@ -30,13 +29,15 @@ public class CreateCustomRequestRequestValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Description);
     }
 
-    [Fact]
-    public void Negative_budget_fails_validation()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-10)]
+    public void Quote_amount_must_be_positive(decimal amount)
     {
-        var request = Valid();
-        request.BudgetAmount = -10m;
+        var validator = new SetCustomRequestQuoteRequestValidator();
+        var request = new SetCustomRequestQuoteRequest { Amount = amount };
 
-        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.BudgetAmount);
+        validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.Amount);
     }
 
     [Fact]
