@@ -11,13 +11,18 @@ public class PaintingDto
 
     public decimal Price { get; set; }
 
-    public string Currency { get; set; } = "USD";
+    /// <summary>Sale price when a promotion applies; null at full price.</summary>
+    public decimal? DiscountedPrice { get; set; }
+
+    public string Currency { get; set; } = "PKR";
 
     public double WidthCm { get; set; }
 
     public double HeightCm { get; set; }
 
-    public string? Medium { get; set; }
+    public Guid? MediumId { get; set; }
+
+    public string? MediumName { get; set; }
 
     public string? ImageUrl { get; set; }
 

@@ -24,11 +24,14 @@ public class CustomRequest : AuditableEntity
     /// <summary>Free-text size/format preference, e.g. "60 × 90 cm, landscape".</summary>
     public string? PreferredSize { get; set; }
 
-    /// <summary>Optional budget the customer has in mind.</summary>
-    public decimal? BudgetAmount { get; set; }
+    /// <summary>
+    /// Price the artist has quoted for the commission, set when the request moves
+    /// to <see cref="CustomRequestStatus.Quoted"/>. Null until then.
+    /// </summary>
+    public decimal? QuoteAmount { get; set; }
 
-    /// <summary>ISO 4217 currency for <see cref="BudgetAmount"/>.</summary>
-    public string Currency { get; set; } = "USD";
+    /// <summary>ISO 4217 currency for <see cref="QuoteAmount"/> (store currency).</summary>
+    public string Currency { get; set; } = StoreDefaults.Currency;
 
     public CustomRequestStatus Status { get; set; } = CustomRequestStatus.Submitted;
 

@@ -2,6 +2,7 @@ using BrushEssence.Application.Admin;
 using BrushEssence.Application.Common.Exceptions;
 using BrushEssence.Application.Common.Interfaces;
 using BrushEssence.Application.Common.Models;
+using BrushEssence.Application.Promotions;
 using BrushEssence.Domain.Common;
 using BrushEssence.Domain.Entities;
 
@@ -10,6 +11,7 @@ namespace BrushEssence.Application.Orders;
 public sealed class OrderService(
     IOrderRepository orders,
     ICartRepository carts,
+    IPromotionRepository promotions,
     ICurrentUser currentUser,
     TimeProvider timeProvider,
     IAuditLogger auditLogger,
@@ -37,8 +39,11 @@ public sealed class OrderService(
             Status = OrderStatus.Placed,
         };
 
-        var currency = "USD";
+        var currency = StoreDefaults.Currency;
         decimal subtotal = 0m;
+
+        // Lock in the promotional price at the moment of checkout.
+        var livePromotions = await promotions.GetLiveAsync(now, cancellationToken);
 
         foreach (var cartItem in cart.Items)
         {
@@ -58,7 +63,9 @@ public sealed class OrderService(
             }
 
             currency = painting.Currency;
-            var lineTotal = painting.Price * cartItem.Quantity;
+            var unitPrice = PromotionCalculator.EffectivePrice(
+                painting.Price, painting.Id, painting.CategoryId, livePromotions);
+            var lineTotal = unitPrice * cartItem.Quantity;
             subtotal += lineTotal;
 
             order.Items.Add(new OrderItem
@@ -66,7 +73,7 @@ public sealed class OrderService(
                 PaintingId = painting.Id,
                 Title = painting.Title,
                 ImageUrl = painting.ImageUrl,
-                UnitPrice = painting.Price,
+                UnitPrice = unitPrice,
                 Quantity = cartItem.Quantity,
                 LineTotal = lineTotal,
             });

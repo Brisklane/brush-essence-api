@@ -14,7 +14,7 @@ public class CartDto
     public decimal Subtotal { get; set; }
 
     /// <summary>ISO 4217 currency the totals are expressed in.</summary>
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "PKR";
 }
 
 /// <summary>Read model for a single cart line, enriched with painting details.</summary>
@@ -31,7 +31,7 @@ public class CartItemDto
     /// <summary>Current unit price of the painting.</summary>
     public decimal UnitPrice { get; set; }
 
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "PKR";
 
     public int Quantity { get; set; }
 

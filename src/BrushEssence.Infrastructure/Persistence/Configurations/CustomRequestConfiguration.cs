@@ -16,7 +16,7 @@ public sealed class CustomRequestConfiguration : IEntityTypeConfiguration<Custom
         builder.Property(r => r.Title).IsRequired().HasMaxLength(200);
         builder.Property(r => r.Description).IsRequired().HasMaxLength(4000);
         builder.Property(r => r.PreferredSize).HasMaxLength(200);
-        builder.Property(r => r.BudgetAmount).HasColumnType("numeric(18,2)");
+        builder.Property(r => r.QuoteAmount).HasColumnType("numeric(18,2)");
         builder.Property(r => r.Currency).IsRequired().HasMaxLength(3);
 
         builder.Property(r => r.Status)

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using BrushEssence.Api.Options;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -41,33 +42,30 @@ public static class ProductionExtensions
         return services;
     }
 
-    public static IServiceCollection AddApiRateLimiting(this IServiceCollection services)
+    public static IServiceCollection AddApiRateLimiting(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        services.AddRateLimiter(options =>
+        var rules = configuration.GetSection(RateLimitOptions.SectionName).Get<RateLimitOptions>()
+            ?? new RateLimitOptions();
+
+        services.AddRateLimiter(limiter =>
         {
-            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            limiter.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-            // Global limiter: a fixed window per client IP.
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                RateLimitPartition.GetFixedWindowLimiter(
+            // Global limiter: a sliding window per client IP (1 segment ≈ fixed).
+            limiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                RateLimitPartition.GetSlidingWindowLimiter(
                     ClientKey(httpContext),
-                    _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 100,
-                        Window = TimeSpan.FromMinutes(1),
-                    }));
+                    _ => SlidingWindow(rules.Global)));
 
-            // Tighter limiter for auth endpoints (brute-force / abuse protection).
-            options.AddPolicy(RateLimitPolicies.Auth, httpContext =>
-                RateLimitPartition.GetFixedWindowLimiter(
+            // Tighter, smoother limiter for auth endpoints (brute-force / abuse protection).
+            limiter.AddPolicy(RateLimitPolicies.Auth, httpContext =>
+                RateLimitPartition.GetSlidingWindowLimiter(
                     ClientKey(httpContext),
-                    _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 10,
-                        Window = TimeSpan.FromMinutes(1),
-                    }));
+                    _ => SlidingWindow(rules.Auth)));
 
-            options.OnRejected = async (context, cancellationToken) =>
+            limiter.OnRejected = async (context, cancellationToken) =>
             {
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
                 {
@@ -106,6 +104,13 @@ public static class ProductionExtensions
 
         return context.Response.WriteAsync(JsonSerializer.Serialize(payload));
     }
+
+    private static SlidingWindowRateLimiterOptions SlidingWindow(RateLimitRule rule) => new()
+    {
+        PermitLimit = rule.PermitLimit,
+        Window = TimeSpan.FromSeconds(rule.WindowSeconds),
+        SegmentsPerWindow = Math.Max(1, rule.SegmentsPerWindow),
+    };
 
     private static string ClientKey(HttpContext httpContext)
         => httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";

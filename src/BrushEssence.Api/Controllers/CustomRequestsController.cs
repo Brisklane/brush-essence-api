@@ -55,4 +55,18 @@ public sealed class CustomRequestsController(
         await updateValidator.ValidateAndThrowAsync(request, cancellationToken);
         return Ok(await customRequestService.UpdateAsync(id, request, cancellationToken));
     }
+
+    [HttpPost("{id:guid}/approve-quote")]
+    [ProducesResponseType(typeof(CustomRequestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CustomRequestDto>> ApproveQuote(Guid id, CancellationToken cancellationToken)
+        => Ok(await customRequestService.ApproveQuoteAsync(id, cancellationToken));
+
+    [HttpPost("{id:guid}/decline-quote")]
+    [ProducesResponseType(typeof(CustomRequestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CustomRequestDto>> DeclineQuote(Guid id, CancellationToken cancellationToken)
+        => Ok(await customRequestService.DeclineQuoteAsync(id, cancellationToken));
 }

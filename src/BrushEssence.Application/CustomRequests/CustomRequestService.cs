@@ -27,8 +27,7 @@ public sealed class CustomRequestService(
             Title = request.Title.Trim(),
             Description = request.Description.Trim(),
             PreferredSize = Clean(request.PreferredSize),
-            BudgetAmount = request.BudgetAmount,
-            Currency = request.Currency,
+            Currency = StoreDefaults.Currency,
             Status = CustomRequestStatus.Submitted,
         };
 
@@ -87,8 +86,7 @@ public sealed class CustomRequestService(
         entity.Title = request.Title.Trim();
         entity.Description = request.Description.Trim();
         entity.PreferredSize = Clean(request.PreferredSize);
-        entity.BudgetAmount = request.BudgetAmount;
-        entity.Currency = request.Currency;
+        entity.Currency = StoreDefaults.Currency;
 
         var orphanedUrls = ReconcileImages(entity, request.Images);
 
@@ -123,6 +121,61 @@ public sealed class CustomRequestService(
 
         auditLogger.LogAction("CustomRequestStatusChanged", "CustomRequest", entity.Id,
             new { From = previousStatus.ToString(), To = request.Status.ToString() });
+
+        return entity.ToDto();
+    }
+
+    public async Task<CustomRequestDto> SetQuoteAsync(
+        Guid id,
+        SetCustomRequestQuoteRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await requests.GetByIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException("Custom request not found.");
+
+        if (!CustomRequestStatusWorkflow.CanTransition(entity.Status, CustomRequestStatus.Quoted))
+        {
+            throw new BadRequestException(
+                $"A quote can't be sent for a request that is {entity.Status}.");
+        }
+
+        entity.QuoteAmount = request.Amount;
+        var note = Clean(request.Note) is { } n
+            ? $"Quote sent: {request.Amount:0.##} {entity.Currency}. {n}"
+            : $"Quote sent: {request.Amount:0.##} {entity.Currency}.";
+        entity.TransitionTo(CustomRequestStatus.Quoted, note);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        auditLogger.LogAction("CustomRequestQuoted", "CustomRequest", entity.Id,
+            new { request.Amount });
+
+        return entity.ToDto();
+    }
+
+    public async Task<CustomRequestDto> ApproveQuoteAsync(Guid id, CancellationToken cancellationToken = default)
+        => await RespondToQuoteAsync(id, CustomRequestStatus.InProgress, "Quote approved by customer.", cancellationToken);
+
+    public async Task<CustomRequestDto> DeclineQuoteAsync(Guid id, CancellationToken cancellationToken = default)
+        => await RespondToQuoteAsync(id, CustomRequestStatus.Declined, "Quote declined by customer.", cancellationToken);
+
+    private async Task<CustomRequestDto> RespondToQuoteAsync(
+        Guid id,
+        CustomRequestStatus target,
+        string note,
+        CancellationToken cancellationToken)
+    {
+        var entity = await LoadOwnedRequestAsync(id, cancellationToken);
+
+        if (entity.Status != CustomRequestStatus.Quoted)
+        {
+            throw new BadRequestException("There is no pending quote to respond to.");
+        }
+
+        entity.TransitionTo(target, note);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        auditLogger.LogAction("CustomRequestQuoteResponse", "CustomRequest", entity.Id,
+            new { Response = target.ToString() });
 
         return entity.ToDto();
     }

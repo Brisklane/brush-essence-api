@@ -25,8 +25,8 @@ public class Order : AuditableEntity
 
     public required ShippingAddress ShippingAddress { get; set; }
 
-    /// <summary>ISO 4217 currency the monetary fields are expressed in.</summary>
-    public string Currency { get; set; } = "USD";
+    /// <summary>ISO 4217 currency the monetary fields are expressed in (store currency).</summary>
+    public string Currency { get; set; } = StoreDefaults.Currency;
 
     /// <summary>Sum of line totals at the time of purchase.</summary>
     public decimal Subtotal { get; set; }

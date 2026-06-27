@@ -15,7 +15,8 @@ namespace BrushEssence.Api.Controllers.Admin;
 [Produces("application/json")]
 public sealed class AdminCustomRequestsController(
     ICustomRequestService customRequestService,
-    IValidator<UpdateCustomRequestStatusRequest> statusValidator) : ControllerBase
+    IValidator<UpdateCustomRequestStatusRequest> statusValidator,
+    IValidator<SetCustomRequestQuoteRequest> quoteValidator) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AdminCustomRequestListItemDto>), StatusCodes.Status200OK)]
@@ -41,5 +42,18 @@ public sealed class AdminCustomRequestsController(
     {
         await statusValidator.ValidateAndThrowAsync(request, cancellationToken);
         return Ok(await customRequestService.UpdateStatusAsync(id, request, cancellationToken));
+    }
+
+    [HttpPut("{id:guid}/quote")]
+    [ProducesResponseType(typeof(CustomRequestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CustomRequestDto>> SetQuote(
+        Guid id,
+        SetCustomRequestQuoteRequest request,
+        CancellationToken cancellationToken)
+    {
+        await quoteValidator.ValidateAndThrowAsync(request, cancellationToken);
+        return Ok(await customRequestService.SetQuoteAsync(id, request, cancellationToken));
     }
 }

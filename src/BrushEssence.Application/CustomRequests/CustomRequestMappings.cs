@@ -12,7 +12,7 @@ public static class CustomRequestMappings
         Title = request.Title,
         Description = request.Description,
         PreferredSize = request.PreferredSize,
-        BudgetAmount = request.BudgetAmount,
+        QuoteAmount = request.QuoteAmount,
         Currency = request.Currency,
         Status = request.Status,
         IsEditable = request.IsEditable,

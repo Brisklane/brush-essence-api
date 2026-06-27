@@ -5,7 +5,7 @@ public class DashboardSummaryDto
 {
     // Revenue
     public decimal TotalRevenue { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "PKR";
 
     // Orders
     public int TotalOrders { get; set; }
@@ -47,7 +47,7 @@ public class ReportPointDto
 public class ReportDto
 {
     public int Days { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "PKR";
     public decimal TotalRevenue { get; set; }
     public int TotalOrders { get; set; }
     public int TotalNewUsers { get; set; }

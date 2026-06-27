@@ -7,6 +7,7 @@ using BrushEssence.Application.Common.Interfaces;
 using BrushEssence.Infrastructure;
 using BrushEssence.Infrastructure.Storage;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using Serilog;
@@ -56,7 +57,7 @@ try
     // Output caching for low-volatility public catalogue reads, and rate
     // limiting to protect the API from abuse.
     builder.Services.AddCatalogOutputCache();
-    builder.Services.AddApiRateLimiting();
+    builder.Services.AddApiRateLimiting(builder.Configuration);
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerWithJwt();
     builder.Services.AddOpenApi();
@@ -87,6 +88,24 @@ try
             .AllowAnyMethod()));
 
     var app = builder.Build();
+
+    // When running behind a reverse proxy / load balancer, honour X-Forwarded-*
+    // so the real client IP (used for rate limiting) and scheme are correct.
+    // OFF by default: trusting these headers without a proxy would let clients
+    // spoof their IP and bypass IP-based rate limiting. Enable only behind a
+    // trusted proxy (and ideally pin KnownProxies/KnownNetworks there).
+    if (app.Configuration.GetValue<bool>("ForwardedHeaders:Enabled"))
+    {
+        var forwardedHeaders = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+        };
+        // The proxy address is usually not known at build time in cloud setups;
+        // trust the immediate upstream. Lock down with KnownProxies in production.
+        forwardedHeaders.KnownNetworks.Clear();
+        forwardedHeaders.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedHeaders);
+    }
 
     app.UseSerilogRequestLogging();
     app.UseSecurityHeaders();

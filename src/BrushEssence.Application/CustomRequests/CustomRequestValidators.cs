@@ -25,9 +25,6 @@ public sealed class CreateCustomRequestRequestValidator : AbstractValidator<Crea
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Description).NotEmpty().MaximumLength(CustomRequestLimits.MaxDescriptionLength);
         RuleFor(x => x.PreferredSize).MaximumLength(200);
-        RuleFor(x => x.BudgetAmount).GreaterThan(0).When(x => x.BudgetAmount.HasValue);
-        RuleFor(x => x.Currency).NotEmpty().Length(3)
-            .WithMessage("Currency must be a 3-letter ISO 4217 code.");
         RuleFor(x => x.Images).Must(images => images.Count <= CustomRequestLimits.MaxImages)
             .WithMessage($"At most {CustomRequestLimits.MaxImages} reference images are allowed.");
         RuleForEach(x => x.Images).SetValidator(new CustomRequestImageInputValidator());
@@ -41,9 +38,6 @@ public sealed class UpdateCustomRequestRequestValidator : AbstractValidator<Upda
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Description).NotEmpty().MaximumLength(CustomRequestLimits.MaxDescriptionLength);
         RuleFor(x => x.PreferredSize).MaximumLength(200);
-        RuleFor(x => x.BudgetAmount).GreaterThan(0).When(x => x.BudgetAmount.HasValue);
-        RuleFor(x => x.Currency).NotEmpty().Length(3)
-            .WithMessage("Currency must be a 3-letter ISO 4217 code.");
         RuleFor(x => x.Images).Must(images => images.Count <= CustomRequestLimits.MaxImages)
             .WithMessage($"At most {CustomRequestLimits.MaxImages} reference images are allowed.");
         RuleForEach(x => x.Images).SetValidator(new CustomRequestImageInputValidator());
@@ -55,6 +49,15 @@ public sealed class UpdateCustomRequestStatusRequestValidator : AbstractValidato
     public UpdateCustomRequestStatusRequestValidator()
     {
         RuleFor(x => x.Status).IsInEnum();
+        RuleFor(x => x.Note).MaximumLength(1000);
+    }
+}
+
+public sealed class SetCustomRequestQuoteRequestValidator : AbstractValidator<SetCustomRequestQuoteRequest>
+{
+    public SetCustomRequestQuoteRequestValidator()
+    {
+        RuleFor(x => x.Amount).GreaterThan(0);
         RuleFor(x => x.Note).MaximumLength(1000);
     }
 }
