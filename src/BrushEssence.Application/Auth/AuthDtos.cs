@@ -57,3 +57,8 @@ public sealed class ResetPasswordRequest
     public string Token { get; init; } = string.Empty;
     public string NewPassword { get; init; } = string.Empty;
 }
+
+public sealed class VerifyEmailRequest
+{
+    public string Token { get; init; } = string.Empty;
+}

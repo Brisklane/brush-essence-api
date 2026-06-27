@@ -2,7 +2,6 @@ using BrushEssence.Application.Common.Exceptions;
 using BrushEssence.Application.Common.Interfaces;
 using BrushEssence.Domain.Common;
 using BrushEssence.Domain.Entities;
-using Microsoft.Extensions.Logging;
 
 namespace BrushEssence.Application.Auth;
 
@@ -15,13 +14,16 @@ public sealed class AuthService(
     IRoleRepository roles,
     IRefreshTokenRepository refreshTokens,
     IPasswordResetTokenRepository resetTokens,
+    IEmailVerificationTokenRepository verificationTokens,
+    IEmailSender emailSender,
+    IAppLinks appLinks,
     IUnitOfWork unitOfWork,
     IPasswordHasher passwordHasher,
     IJwtTokenService tokenService,
-    TimeProvider timeProvider,
-    ILogger<AuthService> logger) : IAuthService
+    TimeProvider timeProvider) : IAuthService
 {
     private const int PasswordResetTokenLifetimeHours = 1;
+    private const int EmailVerificationTokenLifetimeHours = 24;
 
     public async Task<AuthResult> RegisterAsync(
         RegisterRequest request,
@@ -49,7 +51,15 @@ public sealed class AuthService(
 
         await users.AddAsync(user, cancellationToken);
 
-        return await IssueTokensAsync(user, [Roles.Customer], ipAddress, cancellationToken);
+        // Issue a verification token alongside the new account (persisted in the
+        // same SaveChanges via IssueTokensAsync below).
+        var rawVerificationToken = await CreateVerificationTokenAsync(user.Id, cancellationToken);
+
+        var result = await IssueTokensAsync(user, [Roles.Customer], ipAddress, cancellationToken);
+
+        await SendVerificationEmailAsync(user.Email, user.FullName, rawVerificationToken, cancellationToken);
+
+        return result;
     }
 
     public async Task<AuthResult> LoginAsync(
@@ -157,12 +167,11 @@ public sealed class AuthService(
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // TODO: deliver this token to the user via email. No email provider is
-            // configured yet, so the token is logged for local/dev testing only.
-            logger.LogWarning(
-                "Password reset requested for {Email}. Reset token (DEV ONLY): {ResetToken}",
-                email,
-                rawToken);
+            await emailSender.SendAsync(
+                user.Email,
+                AuthEmailTemplates.PasswordResetSubject,
+                AuthEmailTemplates.PasswordReset(appLinks.ResetPasswordUrl(rawToken)),
+                cancellationToken);
         }
 
         // Always succeed regardless of whether the account exists (prevents enumeration).
@@ -190,6 +199,46 @@ public sealed class AuthService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task VerifyEmailAsync(
+        VerifyEmailRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var hash = tokenService.HashToken(request.Token);
+        var token = await verificationTokens.GetByHashWithUserAsync(hash, cancellationToken);
+
+        if (token is null || !token.IsActive || token.User is null)
+        {
+            throw new BadRequestException("This verification link is invalid or has expired.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        token.User.IsEmailVerified = true;
+        token.IsUsed = true;
+        token.UsedAt = now;
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task ResendVerificationAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await users.GetByIdWithRolesAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("User not found.");
+
+        // Idempotent: nothing to do if already verified.
+        if (user.IsEmailVerified)
+        {
+            return;
+        }
+
+        var now = timeProvider.GetUtcNow();
+        await verificationTokens.InvalidateActiveForUserAsync(user.Id, now, cancellationToken);
+
+        var rawToken = await CreateVerificationTokenAsync(user.Id, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await SendVerificationEmailAsync(user.Email, user.FullName, rawToken, cancellationToken);
+    }
+
     public async Task<UserDto> GetProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await users.GetByIdWithRolesAsync(userId, cancellationToken)
@@ -197,6 +246,32 @@ public sealed class AuthService(
 
         return MapToDto(user, RolesOf(user));
     }
+
+    /// <summary>Adds an email-verification token for the user and returns the raw value.</summary>
+    private async Task<string> CreateVerificationTokenAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var rawToken = tokenService.GenerateSecureToken();
+        await verificationTokens.AddAsync(
+            new EmailVerificationToken
+            {
+                UserId = userId,
+                TokenHash = tokenService.HashToken(rawToken),
+                ExpiresAt = timeProvider.GetUtcNow().AddHours(EmailVerificationTokenLifetimeHours),
+            },
+            cancellationToken);
+        return rawToken;
+    }
+
+    private Task SendVerificationEmailAsync(
+        string email,
+        string? fullName,
+        string rawToken,
+        CancellationToken cancellationToken)
+        => emailSender.SendAsync(
+            email,
+            AuthEmailTemplates.VerifyEmailSubject,
+            AuthEmailTemplates.VerifyEmail(fullName, appLinks.VerifyEmailUrl(rawToken)),
+            cancellationToken);
 
     private async Task<AuthResult> IssueTokensAsync(
         User user,

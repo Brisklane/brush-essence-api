@@ -31,5 +31,13 @@ public interface IAuthService
         ResetPasswordRequest request,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Confirms a user's email from a verification token.</summary>
+    Task VerifyEmailAsync(
+        VerifyEmailRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Re-sends the verification email to an unverified user (idempotent).</summary>
+    Task ResendVerificationAsync(Guid userId, CancellationToken cancellationToken = default);
+
     Task<UserDto> GetProfileAsync(Guid userId, CancellationToken cancellationToken = default);
 }

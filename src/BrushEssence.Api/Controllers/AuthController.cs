@@ -25,7 +25,8 @@ public sealed class AuthController(
     IValidator<RegisterRequest> registerValidator,
     IValidator<LoginRequest> loginValidator,
     IValidator<ForgotPasswordRequest> forgotPasswordValidator,
-    IValidator<ResetPasswordRequest> resetPasswordValidator) : ControllerBase
+    IValidator<ResetPasswordRequest> resetPasswordValidator,
+    IValidator<VerifyEmailRequest> verifyEmailValidator) : ControllerBase
 {
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResult), StatusCodes.Status200OK)]
@@ -91,6 +92,31 @@ public sealed class AuthController(
     {
         await resetPasswordValidator.ValidateAndThrowAsync(request, cancellationToken);
         await authService.ResetPasswordAsync(request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("verify-email")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyEmail(
+        VerifyEmailRequest request,
+        CancellationToken cancellationToken)
+    {
+        await verifyEmailValidator.ValidateAndThrowAsync(request, cancellationToken);
+        await authService.VerifyEmailAsync(request, cancellationToken);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("resend-verification")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ResendVerification(CancellationToken cancellationToken)
+    {
+        var userId = currentUser.UserId
+            ?? throw new AuthenticationException("The access token does not contain a user id.");
+
+        await authService.ResendVerificationAsync(userId, cancellationToken);
         return NoContent();
     }
 
