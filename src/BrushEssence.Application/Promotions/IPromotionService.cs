@@ -5,6 +5,9 @@ public interface IPromotionService
 {
     Task<IReadOnlyList<PromotionDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Currently-live promotions for the public storefront, soonest-ending first.</summary>
+    Task<IReadOnlyList<ActivePromotionDto>> GetActiveAsync(CancellationToken cancellationToken = default);
+
     Task<PromotionDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<PromotionDto> CreateAsync(SavePromotionRequest request, CancellationToken cancellationToken = default);

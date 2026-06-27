@@ -18,6 +18,28 @@ public sealed class PromotionService(
             .ToList();
     }
 
+    public async Task<IReadOnlyList<ActivePromotionDto>> GetActiveAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var live = await promotions.GetLiveAsync(now, cancellationToken);
+
+        return live
+            // Soonest-ending first so the banner can feature the most urgent one;
+            // promotions with no end date sort last.
+            .OrderBy(p => p.EndsAt ?? DateTimeOffset.MaxValue)
+            .ThenByDescending(p => p.CreatedAt)
+            .Select(p => new ActivePromotionDto
+            {
+                Name = p.Name,
+                DiscountType = p.DiscountType,
+                Value = p.Value,
+                Scope = p.Scope,
+                EndsAt = p.EndsAt,
+            })
+            .ToList();
+    }
+
     public async Task<PromotionDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var promotion = await promotions.GetByIdAsync(id, cancellationToken)
