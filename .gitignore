@@ -7,6 +7,12 @@
 src/BrushEssence.Api/wwwroot/uploads/*
 !src/BrushEssence.Api/wwwroot/uploads/.gitkeep
 
+# Local-only credential/notes files (never commit)
+*.local.md
+
+# Local helper scripts & notes (never commit)
+/scripts/
+
 # dotenv files
 .env
 .env.local
