@@ -72,7 +72,11 @@ public sealed class PaintingRepository(ApplicationDbContext context) : IPainting
             queryable = queryable.Where(p => p.Price <= maxPrice);
         }
 
-        if (query.MediumId is { } mediumId)
+        if (query.MediumIds is { Count: > 0 } mediumIds)
+        {
+            queryable = queryable.Where(p => p.MediumId != null && mediumIds.Contains(p.MediumId.Value));
+        }
+        else if (query.MediumId is { } mediumId)
         {
             queryable = queryable.Where(p => p.MediumId == mediumId);
         }

@@ -42,6 +42,12 @@ public sealed class PaintingQuery
     public Guid? MediumId { get; set; }
 
     /// <summary>
+    /// Filter to paintings matching any of these mediums (OR). When ids are
+    /// supplied they take precedence over <see cref="MediumId"/>.
+    /// </summary>
+    public List<Guid>? MediumIds { get; set; }
+
+    /// <summary>
     /// Restrict to published / unpublished paintings. The public storefront
     /// passes <c>true</c>; admin listings leave this unset to see everything.
     /// </summary>

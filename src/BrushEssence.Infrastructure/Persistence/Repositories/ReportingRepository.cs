@@ -1,5 +1,6 @@
 using BrushEssence.Application.Admin;
 using BrushEssence.Application.Common.Interfaces;
+using BrushEssence.Domain.Common;
 using BrushEssence.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,9 +33,14 @@ public sealed class ReportingRepository(ApplicationDbContext context) : IReporti
         DateTimeOffset newSince,
         CancellationToken cancellationToken = default)
     {
-        var total = await context.Users.CountAsync(cancellationToken);
-        var active = await context.Users.CountAsync(u => u.IsActive, cancellationToken);
-        var newSinceCount = await context.Users.CountAsync(u => u.CreatedAt >= newSince, cancellationToken);
+        // "Customers" are non-admin users (an admin isn't a shopper). This also
+        // excludes an admin who still happens to carry a legacy Customer role.
+        var customers = context.Users
+            .Where(u => !u.UserRoles.Any(ur => ur.Role!.Name == Roles.Admin));
+
+        var total = await customers.CountAsync(cancellationToken);
+        var active = await customers.CountAsync(u => u.IsActive, cancellationToken);
+        var newSinceCount = await customers.CountAsync(u => u.CreatedAt >= newSince, cancellationToken);
 
         return new UserAggregates(total, active, newSinceCount);
     }

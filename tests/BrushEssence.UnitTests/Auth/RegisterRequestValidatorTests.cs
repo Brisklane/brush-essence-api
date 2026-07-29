@@ -14,7 +14,7 @@ public class RegisterRequestValidatorTests
         var result = _validator.TestValidate(new RegisterRequest
         {
             Email = "artist@example.com",
-            Password = "Sup3rSecret",
+            Password = "Secret!1",
             FullName = "Vincent",
         });
 
@@ -29,17 +29,19 @@ public class RegisterRequestValidatorTests
         var result = _validator.TestValidate(new RegisterRequest
         {
             Email = email,
-            Password = "Sup3rSecret",
+            Password = "Secret!1",
         });
 
         result.ShouldHaveValidationErrorFor(x => x.Email);
     }
 
+    // Policy: min 8 chars, at least one uppercase, one lowercase, one digit, one special char.
     [Theory]
-    [InlineData("short1A")]      // too short
-    [InlineData("alllowercase1")] // no uppercase
-    [InlineData("ALLUPPERCASE1")] // no lowercase
-    [InlineData("NoDigitsHere")]  // no digit
+    [InlineData("Aa!1aa")]    // too short (< 8)
+    [InlineData("abcdef1!")]  // no uppercase
+    [InlineData("ABCDEF1!")]  // no lowercase
+    [InlineData("Abcdefg!")]  // no digit
+    [InlineData("Abcdefg1")]  // no special character
     public void Weak_password_fails(string password)
     {
         var result = _validator.TestValidate(new RegisterRequest

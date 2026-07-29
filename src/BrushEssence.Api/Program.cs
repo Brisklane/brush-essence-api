@@ -5,9 +5,11 @@ using BrushEssence.Api.Options;
 using BrushEssence.Application;
 using BrushEssence.Application.Common.Interfaces;
 using BrushEssence.Infrastructure;
+using BrushEssence.Infrastructure.Persistence;
 using BrushEssence.Infrastructure.Storage;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using Serilog;
@@ -89,6 +91,25 @@ try
 
     var app = builder.Build();
 
+    // Bring the database schema up to date on startup so a fresh/empty database
+    // (e.g. after running scripts/clear-db.sql) works with no manual step —
+    // migrations recreate the tables and re-seed the Admin/Customer roles.
+    // Wrapped so a transient DB outage (or a test host with no real database)
+    // doesn't crash startup; the readiness health check reports DB status.
+    using (var scope = app.Services.CreateScope())
+    {
+        try
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await dbContext.Database.MigrateAsync();
+            Log.Information("Database migrations applied (or already up to date).");
+        }
+        catch (Exception migrationException)
+        {
+            Log.Warning(migrationException, "Could not apply database migrations on startup.");
+        }
+    }
+
     // When running behind a reverse proxy / load balancer, honour X-Forwarded-*
     // so the real client IP (used for rate limiting) and scheme are correct.
     // OFF by default: trusting these headers without a proxy would let clients
@@ -132,8 +153,15 @@ try
     }
 
     app.UseHttpsRedirection();
-    app.UseRateLimiter();
+
+    // CORS must run BEFORE the rate limiter and output cache so that:
+    //  - preflight OPTIONS requests are answered here and never count against the
+    //    rate limit, and
+    //  - short-circuited responses (a 429 from the limiter, or a cache hit) still
+    //    carry the Access-Control-Allow-Origin header. Otherwise the browser
+    //    reports them as opaque "CORS error"s instead of the real status.
     app.UseCors();
+    app.UseRateLimiter();
     app.UseOutputCache();
     app.UseAuthentication();
     app.UseAuthorization();
